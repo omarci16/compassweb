@@ -15,11 +15,13 @@ import { WaitingOnBadge } from "@/components/projects/WaitingOnBadge";
 import { UrgencyDot, urgencyBorder } from "@/components/projects/UrgencyIndicator";
 import { Button } from "@/components/ui/button";
 import {
+  computeBriefing,
   getLeads,
   getProjects,
   getRevenueMetrics,
 } from "@/lib/data/queries";
-import { demoBriefing } from "@/lib/data/demo";
+import { createClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/data/queries";
 import {
   formatHufCompact,
   formatRelativeHu,
@@ -31,17 +33,26 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardHome() {
-  const [leads, projects, revenue] = await Promise.all([
+  let firstName = "Richárd";
+  if (isSupabaseConfigured()) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    const fullName = (user?.user_metadata?.full_name as string | undefined) ?? user?.email ?? "Richárd";
+    firstName = fullName.split(" ")[0] ?? "Richárd";
+  }
+
+  const [leads, projects, revenue, briefing] = await Promise.all([
     getLeads({ status: "active", limit: 5 }),
     getProjects({ activeOnly: true }),
     getRevenueMetrics(),
+    computeBriefing(firstName),
   ]);
 
   const topProjects = projects.slice(0, 5);
 
   return (
     <div className="space-y-6">
-      <DailyBriefingCard briefing={demoBriefing} />
+      <DailyBriefingCard briefing={briefing} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat

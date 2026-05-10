@@ -3,7 +3,10 @@
 
 import { createClient } from "@/lib/supabase/server";
 import type {
+  DailyBriefing,
+  DailyBriefingItem,
   Deal,
+  EmailLog,
   Invoice,
   Lead,
   LeadStatus,
@@ -11,10 +14,12 @@ import type {
 } from "@/lib/types/app.types";
 import {
   demoDeals,
+  demoEmailLog,
   demoInvoices,
   demoLeads,
   demoProjects,
 } from "./demo";
+import { differenceInDays } from "date-fns";
 
 export function isSupabaseConfigured() {
   return Boolean(
@@ -198,4 +203,256 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
   const retainer_clients = projects.filter((p) => p.current_stage === 7).length;
 
   return { mrr_current, mrr_projected, one_time_this_month, outstanding, overdue, retainer_clients };
+}
+
+// ---------------------------------------------------------------------
+// Email log — for the Outreach page
+// ---------------------------------------------------------------------
+
+export async function getEmailLog(opts?: {
+  direction?: "inbound" | "outbound";
+  limit?: number;
+  projectId?: string;
+  leadId?: string;
+  dealId?: string;
+}): Promise<EmailLog[]> {
+  if (!isSupabaseConfigured()) {
+    let log = [...demoEmailLog];
+    if (opts?.direction) log = log.filter((e) => e.direction === opts.direction);
+    if (opts?.projectId) log = log.filter((e) => e.project_id === opts.projectId);
+    if (opts?.leadId) log = log.filter((e) => e.lead_id === opts.leadId);
+    if (opts?.dealId) log = log.filter((e) => e.deal_id === opts.dealId);
+    log.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return log.slice(0, opts?.limit ?? 100);
+  }
+  const supabase = createClient();
+  let query = supabase.from("email_log").select("*").order("created_at", { ascending: false });
+  if (opts?.direction) query = query.eq("direction", opts.direction);
+  if (opts?.projectId) query = query.eq("project_id", opts.projectId);
+  if (opts?.leadId) query = query.eq("lead_id", opts.leadId);
+  if (opts?.dealId) query = query.eq("deal_id", opts.dealId);
+  if (opts?.limit) query = query.limit(opts.limit);
+  const { data } = await query;
+  return (data ?? []) as unknown as EmailLog[];
+}
+
+// ---------------------------------------------------------------------
+// Insights / analytics for the Intelligence page
+// ---------------------------------------------------------------------
+
+export interface Insights {
+  win_rate_overall: number;
+  win_rate_by_niche: { niche: string; rate: number; volume: number }[];
+  win_rate_by_source: { source: string; rate: number; volume: number }[];
+  loss_reasons: { name: string; value: number }[];
+  cycle_trend: { month: string; days: number }[];
+  speed_to_lead_median_min: number;
+  wins_this_month: number;
+  closed_this_month: number;
+}
+
+const HU_MONTHS = ["Jan", "Feb", "Már", "Ápr", "Máj", "Jún", "Júl", "Aug", "Sze", "Okt", "Nov", "Dec"];
+
+export async function getInsights(): Promise<Insights> {
+  const leads = await getLeads({ limit: 1000 });
+
+  const closed = leads.filter((l) => l.status === "won" || l.status === "lost");
+  const wins = closed.filter((l) => l.status === "won");
+  const win_rate_overall = closed.length === 0 ? 0 : Math.round((wins.length / closed.length) * 100);
+
+  const groupRate = <K extends string>(getKey: (l: Lead) => K | null) => {
+    const buckets = new Map<K, { wins: number; total: number }>();
+    for (const l of closed) {
+      const k = getKey(l);
+      if (!k) continue;
+      const b = buckets.get(k) ?? { wins: 0, total: 0 };
+      b.total += 1;
+      if (l.status === "won") b.wins += 1;
+      buckets.set(k, b);
+    }
+    return Array.from(buckets.entries())
+      .map(([k, b]) => ({ key: k, rate: b.total === 0 ? 0 : Math.round((b.wins / b.total) * 100), volume: b.total }))
+      .sort((a, b) => b.rate - a.rate);
+  };
+
+  const win_rate_by_niche = groupRate((l) => l.niche).map(({ key, rate, volume }) => ({ niche: key, rate, volume }));
+  const win_rate_by_source = groupRate((l) => l.source).map(({ key, rate, volume }) => ({ source: key, rate, volume }));
+
+  const lossCounts = new Map<string, number>();
+  for (const l of leads.filter((x) => x.status === "lost" && x.loss_reason)) {
+    const k = l.loss_reason!;
+    lossCounts.set(k, (lossCounts.get(k) ?? 0) + 1);
+  }
+  const loss_reasons = Array.from(lossCounts.entries())
+    .map(([name, value]) => ({ name: name.replace("_", " "), value }))
+    .sort((a, b) => b.value - a.value);
+
+  // Cycle trend: average days from created_at → updated_at for wins, bucketed by month of close
+  const cycleByMonth = new Map<string, { sum: number; count: number; sortKey: number }>();
+  for (const l of wins) {
+    const closedAt = new Date(l.updated_at);
+    const days = Math.max(1, differenceInDays(closedAt, new Date(l.created_at)));
+    const monthIdx = closedAt.getMonth();
+    const yearMonth = `${closedAt.getFullYear()}-${monthIdx}`;
+    const label = HU_MONTHS[monthIdx];
+    const cur = cycleByMonth.get(yearMonth) ?? { sum: 0, count: 0, sortKey: closedAt.getFullYear() * 12 + monthIdx };
+    cur.sum += days;
+    cur.count += 1;
+    cycleByMonth.set(yearMonth, cur);
+    // Stash label
+    (cur as { label?: string }).label = label;
+  }
+  const cycle_trend = Array.from(cycleByMonth.values())
+    .sort((a, b) => a.sortKey - b.sortKey)
+    .slice(-6)
+    .map((b) => ({ month: (b as { label?: string }).label ?? "?", days: Math.round(b.sum / b.count) }));
+
+  const speedSamples = leads
+    .map((l) => l.speed_to_lead_minutes)
+    .filter((m): m is number => typeof m === "number")
+    .sort((a, b) => a - b);
+  const speed_to_lead_median_min = speedSamples.length === 0
+    ? 0
+    : speedSamples[Math.floor(speedSamples.length / 2)];
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+  const closedThisMonth = closed.filter((l) => new Date(l.updated_at) >= monthStart);
+
+  return {
+    win_rate_overall,
+    win_rate_by_niche,
+    win_rate_by_source,
+    loss_reasons,
+    cycle_trend,
+    speed_to_lead_median_min,
+    wins_this_month: closedThisMonth.filter((l) => l.status === "won").length,
+    closed_this_month: closedThisMonth.length,
+  };
+}
+
+// ---------------------------------------------------------------------
+// Daily briefing — deterministic compute from current operational state.
+// (The AI prompt in lib/ai/prompts/daily-briefing.ts is reserved for a
+// future morning-cron version; this synchronous variant is what renders
+// at every page load.)
+// ---------------------------------------------------------------------
+
+export async function computeBriefing(firstName = "Richárd"): Promise<DailyBriefing> {
+  const [leads, projects, invoices] = await Promise.all([
+    getLeads({ limit: 200 }),
+    getProjects({ activeOnly: true }),
+    getInvoices(),
+  ]);
+
+  const now = Date.now();
+  const items: DailyBriefingItem[] = [];
+
+  // 1. Urgent projects: revision deadline past, or stuck >7d on us
+  const revisionPastDue = projects.filter(
+    (p) =>
+      p.current_stage === 5 &&
+      p.revision_deadline &&
+      new Date(p.revision_deadline).getTime() < now &&
+      !p.revision_received_at,
+  );
+  for (const p of revisionPastDue.slice(0, 2)) {
+    items.push({
+      severity: "urgent",
+      title: `${p.client_name} — revízió határidő lejárt`,
+      detail: "5 munkanap eltelt, automatikus jóváhagyás aktiválható.",
+      href: `/projects/${p.id}`,
+    });
+  }
+
+  // 2. Overdue invoices
+  const overdue = invoices.filter((i) => i.status === "overdue");
+  for (const inv of overdue.slice(0, 2)) {
+    const project = projects.find((p) => p.id === inv.project_id);
+    const daysOver = inv.due_at ? differenceInDays(new Date(), new Date(inv.due_at)) : 0;
+    items.push({
+      severity: "urgent",
+      title: `${project?.client_name ?? "Számla"} — ${inv.type === "final" ? "végszámla" : inv.type} ${daysOver}d késésben`,
+      detail: `Kintlevőség, chaser email javasolt.`,
+      href: project ? `/projects/${project.id}` : "/revenue",
+    });
+  }
+
+  // 3. Uncontacted high-score leads
+  const uncontactedHot = leads.filter(
+    (l) =>
+      l.status === "new" &&
+      !l.first_contact_at &&
+      (l.win_probability ?? 0) >= 70,
+  );
+  if (uncontactedHot.length > 0) {
+    items.push({
+      severity: "action",
+      title: `${uncontactedHot.length} új lead 70+ score-ral, egyik sem kontaktálva`,
+      detail: uncontactedHot.slice(0, 3).map((l) => l.company_name).join(", "),
+      href: "/leads",
+    });
+  }
+
+  // 4. Materials deadline approaching (projects in stage 3, deadline ≤ 2 days, no materials)
+  const materialsApproaching = projects.filter(
+    (p) =>
+      p.current_stage === 3 &&
+      p.materials_deadline &&
+      !p.materials_received_at &&
+      differenceInDays(new Date(p.materials_deadline), new Date()) <= 2,
+  );
+  for (const p of materialsApproaching.slice(0, 2)) {
+    const daysLeft = differenceInDays(new Date(p.materials_deadline!), new Date());
+    items.push({
+      severity: "action",
+      title: `${p.client_name} — anyaghatáridő ${daysLeft <= 0 ? "ma" : `${daysLeft} nap múlva`}`,
+      detail: p.blocker ?? "Anyagok még nem érkeztek meg, chaser email javasolt.",
+      href: `/projects/${p.id}`,
+    });
+  }
+
+  // 5. Stuck on us > 7 days
+  const stuckOnUs = projects.filter(
+    (p) => p.waiting_on === "us" && p.days_in_current_stage >= 7,
+  );
+  for (const p of stuckOnUs.slice(0, 2)) {
+    items.push({
+      severity: "action",
+      title: `${p.client_name} — ${p.days_in_current_stage}d a jelenlegi szakaszban`,
+      detail: "Mi vagyunk a blokk. Lépni kell.",
+      href: `/projects/${p.id}`,
+    });
+  }
+
+  // 6. ok signal
+  const onTrack = projects.filter(
+    (p) => p.urgency_score < 50 && !p.blocker,
+  );
+  if (onTrack.length > 0 && items.length < 6) {
+    items.push({
+      severity: "ok",
+      title: `${onTrack.length} projekt rendben halad`,
+      detail: "Nincs blokkoló, alacsony sürgősség.",
+    });
+  }
+
+  // Sort by severity, cap to 6
+  const sevRank: Record<DailyBriefingItem["severity"], number> = { urgent: 0, action: 1, info: 2, ok: 3 };
+  items.sort((a, b) => sevRank[a.severity] - sevRank[b.severity]);
+  const top = items.slice(0, 6);
+
+  // Suggested first action: top urgent → top action
+  const first = top.find((i) => i.href);
+  return {
+    generated_at: new Date().toISOString(),
+    greeting: `Jó reggelt, ${firstName}.`,
+    items: top.length > 0 ? top : [{
+      severity: "ok",
+      title: "Minden rendben",
+      detail: "Nincs sürgős teendő ma reggel.",
+    }],
+    suggested_first_action: first ? { label: `Open ${first.title.split("—")[0].trim()}`, href: first.href! } : null,
+  };
 }
