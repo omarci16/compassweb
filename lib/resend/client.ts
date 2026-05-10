@@ -24,12 +24,15 @@ export interface SendEmailInput {
 
 export async function sendEmail(input: SendEmailInput) {
   const resend = getResend();
+  // Resend requires one of html, text, or react. Provide a minimal text
+  // fallback if neither is supplied so the call is well-typed.
+  const html = input.html;
+  const text = input.text ?? (html ? undefined : input.subject);
   return resend.emails.send({
     from: FROM_EMAIL,
     to: input.to,
     subject: input.subject,
-    html: input.html,
-    text: input.text,
+    ...(html ? { html } : { text: text! }),
     replyTo: input.replyTo,
   });
 }

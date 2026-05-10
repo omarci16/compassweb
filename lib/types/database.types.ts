@@ -13,10 +13,11 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type TableDef<Row extends Record<string, unknown>> = {
   Row: Row;
-  Insert: Partial<Row>;
-  Update: Partial<Row>;
+  Insert: any;
+  Update: any;
   Relationships: [];
 };
 
@@ -34,10 +35,20 @@ export type Database = {
       templates: TableDef<TemplateRow>;
       users_profile: TableDef<UserProfileRow>;
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
-    Enums: Record<string, never>;
-    CompositeTypes: Record<string, never>;
+    Views: {
+      [key: string]: {
+        Row: Record<string, unknown>;
+        Relationships: [];
+      };
+    };
+    Functions: {
+      [key: string]: {
+        Args: Record<string, unknown>;
+        Returns: unknown;
+      };
+    };
+    Enums: { [key: string]: string };
+    CompositeTypes: { [key: string]: Record<string, unknown> };
   };
 };
 
