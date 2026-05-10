@@ -10,13 +10,14 @@ import {
   XCircle,
 } from "lucide-react";
 import { getLeadById } from "@/lib/data/queries";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LeadScoreBadge } from "@/components/leads/LeadScoreBadge";
 import { EnrichmentStatusBadge } from "@/components/leads/EnrichmentStatus";
 import { SpeedToLeadTimer } from "@/components/leads/SpeedToLeadTimer";
 import { ScoreLeadButton } from "@/components/leads/ScoreLeadButton";
+import { MoveToPipelineButton } from "@/components/leads/MoveToPipelineButton";
+import { LeadStatusActions } from "@/components/leads/LeadStatusActions";
 import { SOURCE_LABELS, PACKAGE_LABELS } from "@/lib/types/app.types";
 import { formatDateTimeHu, formatRelativeHu } from "@/lib/utils/format";
 
@@ -62,11 +63,30 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <ScoreLeadButton leadId={lead.id} />
-          <Button variant="outline" size="sm">Move to pipeline</Button>
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2">
+            <ScoreLeadButton leadId={lead.id} />
+            {!["won", "lost", "archived"].includes(lead.status) && (
+              <MoveToPipelineButton leadId={lead.id} />
+            )}
+          </div>
+          <LeadStatusActions leadId={lead.id} status={lead.status} />
         </div>
       </div>
+
+      {lead.status === "lost" && lead.loss_reason && (
+        <Card className="border-compass-red/30 bg-compass-red/5">
+          <CardContent className="pt-4 flex items-start gap-3">
+            <XCircle className="h-4 w-4 text-compass-red mt-0.5 shrink-0" />
+            <div className="text-sm">
+              <div className="font-medium">Lost — {lead.loss_reason.replace("_", " ")}</div>
+              {lead.loss_notes && (
+                <p className="text-muted-foreground mt-0.5">{lead.loss_notes}</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
