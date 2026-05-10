@@ -13,6 +13,7 @@ import { Stat } from "@/components/shared/Stat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { MarkPaidButton } from "@/components/revenue/InvoiceActions";
 import {
   formatDateHu,
   formatHuf,
@@ -97,6 +98,7 @@ export default async function RevenuePage() {
                 <TableHead>Issued</TableHead>
                 <TableHead>Due</TableHead>
                 <TableHead className="text-right">Amount</TableHead>
+                <TableHead className="w-[120px]" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -139,6 +141,9 @@ export default async function RevenuePage() {
                     </TableCell>
                     <TableCell className="text-right font-medium tabular-nums">
                       {formatHuf(inv.amount_huf)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <MarkPaidButton invoiceId={inv.id} status={inv.status} />
                     </TableCell>
                   </TableRow>
                 );

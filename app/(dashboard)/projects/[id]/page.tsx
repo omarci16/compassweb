@@ -3,13 +3,11 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   ExternalLink,
-  Eye,
   Mail,
   AlertTriangle,
   CalendarDays,
 } from "lucide-react";
 import { getInvoices, getProjectById } from "@/lib/data/queries";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StageProgress } from "@/components/projects/StageProgress";
@@ -17,6 +15,8 @@ import { StageGateGuard } from "@/components/projects/StageGateGuard";
 import { BlockerField } from "@/components/projects/BlockerField";
 import { WaitingOnBadge } from "@/components/projects/WaitingOnBadge";
 import { UrgencyChip } from "@/components/projects/UrgencyIndicator";
+import { MarkPaidButton } from "@/components/revenue/InvoiceActions";
+import { PortalTokenManager } from "@/components/projects/PortalTokenManager";
 import { checkGate } from "@/lib/utils/stage-gates";
 import {
   PACKAGE_LABELS,
@@ -43,8 +43,6 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
       ? checkGate({ project, depositInvoice, finalInvoice }, nextStage)
       : { allowed: false, blockers: [] };
 
-  const portalUrl = `/portal/${project.portal_token}`;
-
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -64,13 +62,9 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
             <UrgencyChip score={project.urgency_score} />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link href={portalUrl} target="_blank">
-              <Eye className="h-3.5 w-3.5" /> Client portal
-            </Link>
-          </Button>
+        <div className="flex flex-col items-end gap-2">
           <StageGateGuard projectId={project.id} currentStage={project.current_stage} gate={gate} />
+          <PortalTokenManager projectId={project.id} token={project.portal_token} />
         </div>
       </div>
 
@@ -120,6 +114,7 @@ export default async function ProjectDetailPage({ params }: { params: { id: stri
                         >
                           {inv.status}
                         </Badge>
+                        <MarkPaidButton invoiceId={inv.id} status={inv.status} />
                       </div>
                     </div>
                   ))}
