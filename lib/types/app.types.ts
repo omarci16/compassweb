@@ -5,6 +5,7 @@ import type {
   InvoiceRow,
   LeadRow,
   ProjectRow,
+  ScrapingJobRow,
   TemplateRow,
 } from "./database.types";
 
@@ -87,6 +88,86 @@ export type EmailType =
   | "general";
 
 export type ReEngagementStatus = "active" | "paused" | "converted" | "unsubscribed";
+
+// ---------------------------------------------------------------------
+// Prospecting (cold lead sourcing)
+// ---------------------------------------------------------------------
+
+export type ProspectingNiche = "beauty" | "fitness" | "dental" | "real_estate" | "other";
+
+export type ScrapingJobStatus =
+  | "queued"
+  | "running"
+  | "collecting"
+  | "processing"
+  | "complete"
+  | "failed"
+  | "cancelled";
+
+export type WebsiteHealthStatus =
+  | "no_website"
+  | "healthy"
+  | "broken"
+  | "redirect_social"
+  | "tiny"
+  | "stale"
+  | "unknown";
+
+export const PROSPECTING_NICHE_LABELS: Record<ProspectingNiche, string> = {
+  beauty: "Beauty",
+  fitness: "Fitness",
+  dental: "Dental",
+  real_estate: "Real estate",
+  other: "Other",
+};
+
+export const PROSPECTING_NICHE_LABELS_HU: Record<ProspectingNiche, string> = {
+  beauty: "Szépségipar",
+  fitness: "Fitness",
+  dental: "Fogászat",
+  real_estate: "Ingatlan",
+  other: "Egyéb",
+};
+
+export type SocialLinks = {
+  instagram?: string;
+  facebook?: string;
+  linkedin?: string;
+  tiktok?: string;
+};
+
+export type WebsiteHealthDetails = {
+  http_status?: number;
+  response_ms?: number;
+  body_size?: number;
+  redirect_to?: string;
+  last_modified?: string;
+  reason?: string;
+};
+
+// Tech stack detected from a site's HTML.
+export type TechStack = {
+  cms: "wordpress" | "wix" | "squarespace" | "webflow" | "shopify" | "joomla" | "drupal" | "custom" | null;
+  ecommerce: "shopify" | "woocommerce" | "unas" | "shoprenter" | "magento" | null;
+  analytics: ("ga4" | "gtm" | "meta_pixel" | "hotjar" | "matomo" | "linkedin_insight")[];
+  booking: "calendly" | "simplybook" | "salonized" | "booksy" | "setmore" | "tidycal" | null;
+  has_blog: boolean;
+  has_schema_org: boolean;
+  has_open_graph: boolean;
+  has_viewport_meta: boolean;
+  has_https: boolean;
+  has_contact_form: boolean;
+  has_sitemap: boolean | null;
+};
+
+export type PainSignalSeverity = "low" | "medium" | "high";
+
+export type PainSignal = {
+  code: string;
+  severity: PainSignalSeverity;
+  label_hu: string;
+  label_en: string;
+};
 
 // ---------------------------------------------------------------------
 // Stage labels (Hungarian + English)
@@ -174,6 +255,11 @@ export type EmailLog = Omit<EmailLogRow, "type" | "direction"> & {
 };
 
 export type Template = TemplateRow;
+
+export type ScrapingJob = Omit<ScrapingJobRow, "niche" | "status"> & {
+  niche: ProspectingNiche;
+  status: ScrapingJobStatus;
+};
 
 // ---------------------------------------------------------------------
 // API response shapes

@@ -13,11 +13,13 @@ import {
   Banknote,
   BarChart3,
   Settings,
+  Target,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/prospecting", label: "Prospecting", icon: Target },
   { href: "/leads", label: "Leads", icon: Inbox },
   { href: "/pipeline", label: "Pipeline", icon: Kanban },
   { href: "/projects", label: "Projects", icon: ClipboardList },

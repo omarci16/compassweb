@@ -34,6 +34,7 @@ export type Database = {
       re_engagement_sequences: TableDef<ReEngagementRow>;
       templates: TableDef<TemplateRow>;
       users_profile: TableDef<UserProfileRow>;
+      scraping_jobs: TableDef<ScrapingJobRow>;
     };
     Views: {
       [key: string]: {
@@ -82,6 +83,25 @@ export type LeadRow = {
   loss_notes: string | null;
   assigned_to: string | null;
   converted_to_project_id: string | null;
+  // Prospecting fields (added in 0002_prospecting.sql)
+  scraping_job_id: string | null;
+  gmaps_place_id: string | null;
+  gmaps_category: string | null;
+  gmaps_address: string | null;
+  gmaps_city: string | null;
+  gmaps_rating: number | null;
+  gmaps_review_count: number | null;
+  gmaps_phone: string | null;
+  gmaps_url: string | null;
+  social_links: Json | null;
+  website_health_status: string | null;
+  website_health_checked_at: string | null;
+  website_health_details: Json | null;
+  // Pain intelligence (added in 0003_pain_intelligence.sql)
+  tech_stack: Json | null;
+  pain_signals: Json | null;
+  pain_audit: string | null;
+  pain_audit_generated_at: string | null;
 };
 
 export type DealRow = {
@@ -238,4 +258,29 @@ export type UserProfileRow = {
   avatar_initials: string | null;
   role: string;
   created_at: string;
+};
+
+export type ScrapingJobRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  niche: string;
+  search_terms: string[];
+  city: string;
+  country: string;
+  max_results: number;
+  apify_run_id: string | null;
+  apify_dataset_id: string | null;
+  apify_actor_id: string;
+  status: string;
+  started_at: string | null;
+  finished_at: string | null;
+  error_message: string | null;
+  total_scraped: number;
+  total_duplicates: number;
+  total_imported: number;
+  total_top_tier: number;
+  estimated_cost_usd: number | null;
+  triggered_by: string | null;
+  notes: string | null;
 };

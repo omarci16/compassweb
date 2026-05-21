@@ -9,3 +9,6 @@ export {
 } from "./stage-reminders";
 export { reEngagementSequence } from "./re-engagement";
 export { monthlyRetainerInvoice } from "./monthly-retainer";
+export { prospectingRunScrape } from "./prospecting-run-scrape";
+export { prospectingProcessResults } from "./prospecting-process-results";
+export { generatePainAudit } from "./generate-pain-audit";

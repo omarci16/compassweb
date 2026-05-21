@@ -18,7 +18,16 @@ import { SpeedToLeadTimer } from "@/components/leads/SpeedToLeadTimer";
 import { ScoreLeadButton } from "@/components/leads/ScoreLeadButton";
 import { MoveToPipelineButton } from "@/components/leads/MoveToPipelineButton";
 import { LeadStatusActions } from "@/components/leads/LeadStatusActions";
-import { SOURCE_LABELS, PACKAGE_LABELS } from "@/lib/types/app.types";
+import { PainSignalsList } from "@/components/leads/PainSignalsList";
+import { TechStackBadges } from "@/components/leads/TechStackBadges";
+import { PainAuditCard } from "@/components/leads/PainAuditCard";
+import { ColdOutreachModal } from "@/components/leads/ColdOutreachModal";
+import {
+  SOURCE_LABELS,
+  PACKAGE_LABELS,
+  type PainSignal,
+  type TechStack,
+} from "@/lib/types/app.types";
 import { formatDateTimeHu, formatRelativeHu } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
@@ -30,6 +39,14 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
   const reasons = Array.isArray(lead.win_probability_reasons)
     ? (lead.win_probability_reasons as string[])
     : [];
+  const painSignals: PainSignal[] = Array.isArray(lead.pain_signals)
+    ? (lead.pain_signals as unknown as PainSignal[])
+    : [];
+  const techStack: TechStack | null = lead.tech_stack
+    ? (lead.tech_stack as unknown as TechStack)
+    : null;
+  const isColdSourced = lead.source === "cold_outreach";
+  const canAudit = painSignals.length > 0 || !!lead.enrichment_summary;
 
   return (
     <div className="space-y-6">
@@ -65,6 +82,9 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
+            {isColdSourced && (
+              <ColdOutreachModal leadId={lead.id} hasEmail={!!lead.email} />
+            )}
             <ScoreLeadButton leadId={lead.id} />
             {!["won", "lost", "archived"].includes(lead.status) && (
               <MoveToPipelineButton leadId={lead.id} />
@@ -138,6 +158,37 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
               )}
             </CardContent>
           </Card>
+
+          {isColdSourced && (
+            <PainAuditCard
+              leadId={lead.id}
+              audit={lead.pain_audit}
+              generatedAt={lead.pain_audit_generated_at}
+              canGenerate={canAudit}
+            />
+          )}
+
+          {painSignals.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Detektált fájdalompontok</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <PainSignalsList signals={painSignals} />
+              </CardContent>
+            </Card>
+          )}
+
+          {techStack && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle>Technikai felmérés</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TechStackBadges tech={techStack} />
+              </CardContent>
+            </Card>
+          )}
 
           {lead.internal_notes && (
             <Card>

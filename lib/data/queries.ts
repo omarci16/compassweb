@@ -11,6 +11,7 @@ import type {
   Lead,
   LeadStatus,
   Project,
+  ScrapingJob,
 } from "@/lib/types/app.types";
 import {
   demoDeals,
@@ -203,6 +204,153 @@ export async function getRevenueMetrics(): Promise<RevenueMetrics> {
   const retainer_clients = projects.filter((p) => p.current_stage === 7).length;
 
   return { mrr_current, mrr_projected, one_time_this_month, outstanding, overdue, retainer_clients };
+}
+
+// ---------------------------------------------------------------------
+// Prospecting — scraping jobs + cold lead surfacing
+// ---------------------------------------------------------------------
+
+export interface SourceEffectivenessRow {
+  job_id: string;
+  niche: string;
+  city: string;
+  created_at: string;
+  total_imported: number;
+  total_contacted: number;     // first_contact_at IS NOT NULL
+  total_qualified: number;     // status moved past 'new'/'enriching'
+  total_won: number;           // status = 'won'
+  contact_rate: number;        // 0–1
+  qualification_rate: number;
+  win_rate: number;
+}
+
+/**
+ * Source effectiveness: per scraping_job, how did the leads actually perform?
+ * Lets us learn which niche × city × search-term combos convert.
+ */
+export async function getSourceEffectiveness(): Promise<SourceEffectivenessRow[]> {
+  if (!isSupabaseConfigured()) return [];
+
+  const supabase = createClient();
+
+  // Pull jobs + their leads. We do this in two queries (rather than a SQL view)
+  // to keep the schema simple. For a two-person ops tool, the volume is fine.
+  const { data: jobs } = await supabase
+    .from("scraping_jobs")
+    .select("id, niche, city, created_at, total_imported")
+    .order("created_at", { ascending: false })
+    .limit(50);
+
+  if (!jobs || jobs.length === 0) return [];
+
+  const jobIds = jobs.map((j) => j.id);
+  const { data: leadsForJobs } = await supabase
+    .from("leads")
+    .select("scraping_job_id, status, first_contact_at")
+    .in("scraping_job_id", jobIds);
+
+  const byJob = new Map<string, { contacted: number; qualified: number; won: number }>();
+  for (const l of (leadsForJobs ?? []) as {
+    scraping_job_id: string | null;
+    status: string;
+    first_contact_at: string | null;
+  }[]) {
+    if (!l.scraping_job_id) continue;
+    const b = byJob.get(l.scraping_job_id) ?? { contacted: 0, qualified: 0, won: 0 };
+    if (l.first_contact_at) b.contacted += 1;
+    if (!["new", "enriching"].includes(l.status)) b.qualified += 1;
+    if (l.status === "won") b.won += 1;
+    byJob.set(l.scraping_job_id, b);
+  }
+
+  return jobs.map((j) => {
+    const counts = byJob.get(j.id) ?? { contacted: 0, qualified: 0, won: 0 };
+    const imported = j.total_imported ?? 0;
+    return {
+      job_id: j.id,
+      niche: j.niche,
+      city: j.city,
+      created_at: j.created_at,
+      total_imported: imported,
+      total_contacted: counts.contacted,
+      total_qualified: counts.qualified,
+      total_won: counts.won,
+      contact_rate: imported > 0 ? counts.contacted / imported : 0,
+      qualification_rate: imported > 0 ? counts.qualified / imported : 0,
+      win_rate: imported > 0 ? counts.won / imported : 0,
+    };
+  });
+}
+
+export async function getScrapingJobs(opts?: { limit?: number }): Promise<ScrapingJob[]> {
+  if (!isSupabaseConfigured()) return [];
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("scraping_jobs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(opts?.limit ?? 30);
+  if (error) {
+    console.error("getScrapingJobs error", error);
+    return [];
+  }
+  return (data ?? []) as unknown as ScrapingJob[];
+}
+
+export interface ProspectingStats {
+  total_leads: number;
+  top_tier_count: number;
+  jobs_this_week: number;
+  estimated_spend_this_month_usd: number;
+}
+
+export async function getProspectingStats(): Promise<ProspectingStats> {
+  if (!isSupabaseConfigured()) {
+    return {
+      total_leads: 0,
+      top_tier_count: 0,
+      jobs_this_week: 0,
+      estimated_spend_this_month_usd: 0,
+    };
+  }
+  const supabase = createClient();
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const [coldLeads, topTier, recentJobs, monthJobs] = await Promise.all([
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "cold_outreach"),
+    supabase
+      .from("leads")
+      .select("id", { count: "exact", head: true })
+      .eq("source", "cold_outreach")
+      .gte("win_probability", 70),
+    supabase
+      .from("scraping_jobs")
+      .select("id", { count: "exact", head: true })
+      .gte("created_at", weekAgo),
+    supabase
+      .from("scraping_jobs")
+      .select("estimated_cost_usd")
+      .gte("created_at", monthStart.toISOString()),
+  ]);
+
+  const estimated_spend =
+    (monthJobs.data ?? []).reduce(
+      (s, j) => s + Number((j as { estimated_cost_usd: number | null }).estimated_cost_usd ?? 0),
+      0,
+    );
+
+  return {
+    total_leads: coldLeads.count ?? 0,
+    top_tier_count: topTier.count ?? 0,
+    jobs_this_week: recentJobs.count ?? 0,
+    estimated_spend_this_month_usd: Number(estimated_spend.toFixed(2)),
+  };
 }
 
 // ---------------------------------------------------------------------

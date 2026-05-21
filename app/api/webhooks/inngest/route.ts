@@ -2,9 +2,12 @@ import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/client";
 import {
   enrichLead,
+  generatePainAudit,
   monthlyRetainerInvoice,
   materialsDeadlineReminder,
   projectMaterialsOverdue,
+  prospectingProcessResults,
+  prospectingRunScrape,
   reEngagementSequence,
   recalculateUrgency,
   revisionAutoApprove,
@@ -24,5 +27,8 @@ export const { GET, POST, PUT } = serve({
     projectMaterialsOverdue,
     reEngagementSequence,
     monthlyRetainerInvoice,
+    prospectingRunScrape,
+    prospectingProcessResults,
+    generatePainAudit,
   ],
 });

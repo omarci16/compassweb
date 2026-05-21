@@ -9,24 +9,75 @@ import {
 import { inngest } from "@/lib/inngest/client";
 
 interface ApifyWebhookPayload {
-  resource?: { id?: string; defaultDatasetId?: string };
+  resource?: { id?: string; defaultDatasetId?: string; status?: string };
   eventData?: { actorRunId?: string };
-  // The lead_id is passed via query param when creating the actor run.
+  eventType?: string;
 }
 
 /**
- * Apify webhook receiver. Configure the webhook in Apify console with:
- *   ?lead_id={lead_id_value}
- * appended to this URL.
+ * Apify webhook receiver.
+ *
+ * Two flows, distinguished by query string:
+ *   1. Lead enrichment (website crawler): ?lead_id=<uuid>
+ *      → updates that lead's enrichment_data + fires "lead/enriched"
+ *
+ *   2. Prospecting (Google Maps): ?type=gmaps&job_id=<uuid>
+ *      → fires "prospecting/results-ready" to drive the processing pipeline
  */
 export async function POST(req: Request) {
   const url = new URL(req.url);
+  const type = url.searchParams.get("type");
   const lead_id = url.searchParams.get("lead_id");
-  if (!lead_id) return NextResponse.json({ error: "Missing lead_id" }, { status: 400 });
+  const job_id = url.searchParams.get("job_id");
 
   const payload = (await req.json().catch(() => ({}))) as ApifyWebhookPayload;
+
+  // ---------- Google Maps prospecting flow ----------
+  if (type === "gmaps") {
+    if (!job_id) {
+      return NextResponse.json(
+        { error: "Missing job_id for gmaps webhook" },
+        { status: 400 },
+      );
+    }
+
+    const eventType = payload.eventType ?? "";
+    const runStatus = payload.resource?.status;
+
+    // Apify sends ACTOR.RUN.SUCCEEDED / FAILED / ABORTED
+    if (eventType.includes("FAILED") || eventType.includes("ABORTED") || runStatus === "FAILED") {
+      const supabase = createServiceClient();
+      await supabase
+        .from("scraping_jobs")
+        .update({
+          status: "failed",
+          error_message: `Apify run ${runStatus ?? eventType}`,
+          finished_at: new Date().toISOString(),
+        })
+        .eq("id", job_id);
+      return NextResponse.json({ ok: true, status: "failed" });
+    }
+
+    // Success → fire processing event
+    if (process.env.INNGEST_EVENT_KEY) {
+      await inngest.send({
+        name: "prospecting/results-ready",
+        data: { job_id },
+      });
+    }
+
+    return NextResponse.json({ ok: true, queued: true });
+  }
+
+  // ---------- Lead enrichment flow (existing) ----------
+  if (!lead_id) {
+    return NextResponse.json({ error: "Missing lead_id" }, { status: 400 });
+  }
+
   const runId = payload.resource?.id ?? payload.eventData?.actorRunId;
-  if (!runId) return NextResponse.json({ error: "Missing run id" }, { status: 400 });
+  if (!runId) {
+    return NextResponse.json({ error: "Missing run id" }, { status: 400 });
+  }
 
   const items = await getCrawlResults(runId);
 
