@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blog — Növekedési jegyzetek Budapestről | Compass Solutions</title>
+<meta name="description" content="Ami valóban működik AI-ban, weboldalakban és üzemeltetésben magyar vállalkozásoknak. Havi jegyzetek a Compass Solutions-től — divatszavak nélkül." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ===== Nav ===== -->
+<header class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="logo">
+      <svg class="logo__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 4 L14 11 L12 13 L10 11 Z" fill="currentColor" />
+        <circle cx="12" cy="12" r="1.4" fill="var(--color-bg)" stroke="none"/>
+      </svg>
+      Compass Solutions
+    </a>
+    <nav>
+      <ul class="nav__links">
+        <li><a href="services-presence.html">Szolgáltatások</a></li>
+        <li><a href="work.html">Munkáink</a></li>
+        <li><a href="blog.html" class="active">Blog</a></li>
+        <li><a href="process.html">Folyamat</a></li>
+        <li><a href="pricing.html">Árak</a></li>
+        <li><a href="about.html">Rólunk</a></li>
+      </ul>
+    </nav>
+    <div class="nav__cta">
+      <div class="lang-switch" role="group" aria-label="Nyelv">
+        <a href="blog.html" class="lang-switch__option active" hreflang="hu" lang="hu" aria-label="Magyar kiválasztva">HU</a>
+        <a href="blog-en.html" class="lang-switch__option" hreflang="en" lang="en">EN</a>
+      </div>
+      <a href="contact.html" class="btn btn--primary">Ingyenes látványterv</a>
+      <button class="nav__toggle" aria-label="Menü megnyitása">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M3 7h18M3 12h18M3 17h18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Blog Hero ===== -->
+<section class="blog-hero">
+  <div class="blog-hero__grid" aria-hidden="true"></div>
+  <div class="container">
+    <div class="blog-hero__inner">
+
+      <div class="blog-hero__text reveal">
+        <span class="eyebrow">/ Növekedési Iránytű</span>
+        <h1>Valódi jegyzetek a növekedésről.</h1>
+        <p class="blog-hero__sub">Ami valóban működik AI-ban, weboldalakban és üzemeltetésben magyar vállalkozásoknak. Havonta. Töltelékszó nélkül.</p>
+        <form class="blog-subscribe-inline" onsubmit="return false;" novalidate>
+          <input type="email" placeholder="email@cime.hu" autocomplete="email" aria-label="E-mail-cím a hírlevélhez" />
+          <button class="btn btn--primary" type="submit">Hírlevél kérése</button>
+        </form>
+        <p class="blog-hero__count">
+          <span class="blog-hero__dot" aria-hidden="true"></span>
+          340+ vállalkozó már feliratkozott
+        </p>
+      </div>
+
+      <div class="blog-hero__meta reveal" data-delay="100" aria-label="Legfrissebb hírlevél-szám előnézet">
+        <div class="blog-hero__publication">
+          <span class="eyebrow" style="margin-bottom: 10px;">/ Legfrissebb szám</span>
+          <p>2026. május 18.</p>
+          <strong>Így működik egy AI onboarding rendszer — és hogyan spórolt meg nekünk heti 11 órát.</strong>
+          <hr class="divider" style="margin: 20px 0;" />
+          <ul>
+            <li>Speed-to-lead: a 90 másodperces szabály, ami megnyeri a munkát</li>
+            <li>GEO vs. SEO — mi változik 2026-ban</li>
+            <li>Egy új belépő valódi szocho-költsége</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Articles ===== -->
+<section class="section section--tight">
+  <div class="container">
+
+    <!-- Filter bar -->
+    <div class="filters reveal" data-filter-group="blog">
+      <button class="filter active" data-filter="all">Minden cikk</button>
+      <button class="filter" data-filter="websites">Weboldalak</button>
+      <button class="filter" data-filter="marketing">Marketing</button>
+      <button class="filter" data-filter="operations">Operations</button>
+      <button class="filter" data-filter="seo">SEO &amp; GEO</button>
+    </div>
+
+    <!-- Featured article — always visible, pinned above filter grid -->
+    <a class="blog-feature reveal" href="#">
+      <div class="blog-feature__media">
+        <div class="image-placeholder image-placeholder--blog-feature">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">AI onboarding rendszer</span>
+          </div>
+        </div>
+      </div>
+      <div class="blog-feature__body">
+        <div class="blog-feature__meta">
+          <span class="badge badge--accent">Kiemelt</span>
+          <span class="badge">AI automatizáció</span>
+          <span class="badge">Üzleti rendszerek</span>
+        </div>
+        <h3>Így működik egy AI onboarding rendszer.</h3>
+        <p>Megmutatjuk, hogyan automatizálhat egy mai AI onboarding rendszer ügyfélfogadást, gyorsíthatja a kommunikációt, és változtatja a kaotikus átadás-átvételt skálázható digitális folyamattá — valódi számokkal egy élesben futó ügyfél-megvalósításból.</p>
+        <div class="blog-feature__footer">
+          <span>2026. május 18.</span>
+          <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.08em;">· 7 perc olvasás</span>
+          <span class="blog-card__link">Cikk megnyitása <span>→</span></span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Filterable article grid -->
+    <div class="blog-preview__grid" data-filter-target="blog">
+
+      <a class="blog-card reveal" data-tags="websites ai-automation" data-delay="0" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Weboldal élesítés után</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Weboldal / AI automatizáció</span>
+          <h4>Elkészült a weboldala. Mi jön ezután?</h4>
+          <p>Az oldal csak a kezdet. Bemutatjuk, hogyan válik egy egyszerű weboldalból mérhető, automatizált növekedési eszköz.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">2026. május 16.</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 5 perc</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="marketing ai-automation" data-delay="80" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Marketing-automatizáció</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Marketing / AI automatizáció</span>
+          <h4>Marketing és AI 2026-ban.</h4>
+          <p>Az AI átírta a marketinget, de nem tette feleslegessé az ítélőképességet. A működő rendszerek mögött továbbra is stratégia van.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">2026. május 10.</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 6 perc</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="seo" data-delay="160" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">SEO és organikus keresés</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">SEO / Google</span>
+          <h4>Mi az a SEO, és miért számít egy weboldalnak?</h4>
+          <p>Egyszerű magyarázat arra, hogyan működik a keresési láthatóság, és mit jelent ez egy kis cég számára.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">2026. május 7.</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 4 perc</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="operations" data-delay="0" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Érdeklődő-válaszidő</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Operations</span>
+          <h4>Speed-to-lead: miért az első 90 másodperc nyer több munkát, mint az ár.</h4>
+          <p>Egy vízvezeték-szerelőhöz érkezik egy érdeklődés este 11-kor. Egy fogászati rendelőhöz egy időpontfoglalás péntek este. Aki előbb válaszol, szinte mindig nyer.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">2026. május 3.</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 5 perc</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="seo" data-delay="80" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">AI-keresési láthatóság</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">SEO / GEO</span>
+          <h4>GEO: hogyan jelenjen meg ChatGPT-válaszokban, ne csak a Google-találatok között.</h4>
+          <p>A potenciális ügyfeleinek egyre nagyobb hányada AI-asszisztenseket kérdez a Google helyett. Itt van, mit jelent ez — és mit tegyen vele.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">2026. április 28.</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 6 perc</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="operations" data-delay="160" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Létszám vs. automatizáció</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Operations / Magyarország</span>
+          <h4>Egy új munkavállaló valódi költsége Magyarországon — és az AI-alternatíva.</h4>
+          <p>Ha a szochót, a betegszabadságot és a vezetői időt is hozzáadjuk, egy főállású munkavállaló a bérének 2–3-szorosába kerül. Az összehasonlítás egy jól megépített automatizációval kiábrándító.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">2026. április 21.</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 7 perc</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+    <!-- end filterable grid -->
+
+  </div>
+</section>
+
+<!-- ===== Newsletter CTA ===== -->
+<section class="newsletter-cta">
+  <div class="container">
+    <div class="newsletter-cta__inner reveal">
+      <div class="newsletter-cta__copy">
+        <span class="eyebrow eyebrow--accent">/ Növekedési Iránytű</span>
+        <h2>Havonta egyszer. Ami valóban működik.</h2>
+        <p>Nincs ügynökségi szöveg. Nincsenek divatszavak. Csak gyakorlati jegyzetek arról, mi mozdítja most a magyar kisvállalkozásokat — az eszközöktől, amiket használunk, az eredményekig, amiket látunk. Mindig ingyenes.</p>
+      </div>
+      <div class="newsletter-cta__form-wrap">
+        <form class="newsletter-cta__form" onsubmit="return false;" novalidate>
+          <input type="email" placeholder="email@cime.hu" autocomplete="email" aria-label="E-mail-cím" />
+          <button class="btn btn--primary" type="submit">Feliratkozom — ingyenes</button>
+          <p class="newsletter-cta__fine">Nincs spam. Bármikor leiratkozhat. GDPR-megfelelő.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Final CTA ===== -->
+<section class="final-cta">
+  <div class="container final-cta__inner reveal">
+    <h2>Hagyja végre az asztalon felejtett pénzt másnak?</h2>
+    <p>Kezdjen egy ingyenes, 30 perces stratégiai konzultációval. Nincs eladás — csak egy őszinte átnézés arról, hol tudja az AI valóban előrébb mozdítani a vállalkozását.</p>
+    <div class="final-cta__ctas">
+      <a href="contact.html" class="btn btn--primary">Ingyenes stratégiai konzultáció</a>
+      <a href="services-presence.html" class="btn btn--secondary">Vagy nézze meg a szolgáltatásokat <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="index.html" class="logo">
+          <svg class="logo__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 4 L14 11 L12 13 L10 11 Z" fill="currentColor" />
+          </svg>
+          Compass Solutions
+        </a>
+        <p>Iránytű a növekedéshez. AI növekedési partner magyar kkv-knak — Budapest.</p>
+        <div class="footer__social" aria-label="Közösségi linkek">
+          <a href="#" aria-label="Compass Solutions Instagramon">Instagram</a>
+          <a href="#" aria-label="Compass Solutions TikTokon">TikTok</a>
+          <a href="#" aria-label="Compass Solutions Facebookon">Facebook</a>
+          <a href="#" aria-label="Compass Solutions LinkedInen">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h5>Szolgáltatások</h5>
+        <ul>
+          <li><a href="services-presence.html">Presence</a></li>
+          <li><a href="services-growth.html">Growth</a></li>
+          <li><a href="services-operations.html">Operations</a></li>
+          <li><a href="pricing.html">Árak</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Cég</h5>
+        <ul>
+          <li><a href="work.html">Munkáink</a></li>
+          <li><a href="process.html">Folyamat</a></li>
+          <li><a href="about.html">Rólunk</a></li>
+          <li><a href="contact.html">Kapcsolat</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Kapcsolat</h5>
+        <ul>
+          <li><a href="mailto:hello@compass.hu">hello@compass.hu</a></li>
+          <li><a href="tel:+3611234567">+36 1 123 4567</a></li>
+          <li><span class="text-tertiary">Budapest, Magyarország</span></li>
+          <li><span class="text-tertiary">1 munkanapon belül válaszolunk</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Compass Solutions Kft.</span>
+      <span><a href="#">GDPR</a> · <a href="#">Adatkezelés</a> · <a href="#">Impresszum</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

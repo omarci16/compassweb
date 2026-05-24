@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blog — Growth notes from Budapest | Compass Solutions</title>
+<meta name="description" content="What's actually working in AI, websites, and operations for Hungarian businesses. Monthly notes from Compass Solutions — no fluff, no buzzwords." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- ===== Nav ===== -->
+<header class="nav">
+  <div class="container nav__inner">
+    <a href="index-en.html" class="logo">
+      <svg class="logo__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 4 L14 11 L12 13 L10 11 Z" fill="currentColor" />
+        <circle cx="12" cy="12" r="1.4" fill="var(--color-bg)" stroke="none"/>
+      </svg>
+      Compass Solutions
+    </a>
+    <nav>
+      <ul class="nav__links">
+        <li><a href="services-presence-en.html">Services</a></li>
+        <li><a href="work-en.html">Work</a></li>
+        <li><a href="blog-en.html" class="active">Blog</a></li>
+        <li><a href="process-en.html">Process</a></li>
+        <li><a href="pricing-en.html">Pricing</a></li>
+        <li><a href="about-en.html">About</a></li>
+      </ul>
+    </nav>
+    <div class="nav__cta">
+      <div class="lang-switch" role="group" aria-label="Language">
+        <a href="blog.html" class="lang-switch__option" hreflang="hu" lang="hu">HU</a>
+        <a href="blog-en.html" class="lang-switch__option active" hreflang="en" lang="en" aria-label="English selected">EN</a>
+      </div>
+      <a href="contact-en.html" class="btn btn--primary">Get a free visual</a>
+      <button class="nav__toggle" aria-label="Open menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+          <path d="M3 7h18M3 12h18M3 17h18"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Blog Hero ===== -->
+<section class="blog-hero">
+  <div class="blog-hero__grid" aria-hidden="true"></div>
+  <div class="container">
+    <div class="blog-hero__inner">
+
+      <div class="blog-hero__text reveal">
+        <span class="eyebrow">/ Növekedési Iránytű</span>
+        <h1>Real notes on growth.</h1>
+        <p class="blog-hero__sub">What's actually working in AI, websites, and operations for Hungarian businesses. Monthly. No fluff.</p>
+        <form class="blog-subscribe-inline" onsubmit="return false;" novalidate>
+          <input type="email" placeholder="your@email.com" autocomplete="email" aria-label="Email address for newsletter" />
+          <button class="btn btn--primary" type="submit">Get the newsletter</button>
+        </form>
+        <p class="blog-hero__count">
+          <span class="blog-hero__dot" aria-hidden="true"></span>
+          340+ business owners already subscribed
+        </p>
+      </div>
+
+      <div class="blog-hero__meta reveal" data-delay="100" aria-label="Latest newsletter issue preview">
+        <div class="blog-hero__publication">
+          <span class="eyebrow" style="margin-bottom: 10px;">/ Latest issue</span>
+          <p>May 18, 2026</p>
+          <strong>How an AI onboarding system works — and what it saved us 11 hours a week.</strong>
+          <hr class="divider" style="margin: 20px 0;" />
+          <ul>
+            <li>Speed-to-lead: the 90-second rule that wins jobs</li>
+            <li>GEO vs. SEO — what changes in 2026</li>
+            <li>The real Szocho cost of one new hire</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ===== Articles ===== -->
+<section class="section section--tight">
+  <div class="container">
+
+    <!-- Filter bar -->
+    <div class="filters reveal" data-filter-group="blog">
+      <button class="filter active" data-filter="all">All posts</button>
+      <button class="filter" data-filter="websites">Websites</button>
+      <button class="filter" data-filter="marketing">Marketing</button>
+      <button class="filter" data-filter="operations">Operations</button>
+      <button class="filter" data-filter="seo">SEO &amp; GEO</button>
+    </div>
+
+    <!-- Featured article — always visible, pinned above filter grid -->
+    <a class="blog-feature reveal" href="#">
+      <div class="blog-feature__media">
+        <div class="image-placeholder image-placeholder--blog-feature">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">AI onboarding system</span>
+          </div>
+        </div>
+      </div>
+      <div class="blog-feature__body">
+        <div class="blog-feature__meta">
+          <span class="badge badge--accent">Featured</span>
+          <span class="badge">AI automation</span>
+          <span class="badge">Business systems</span>
+        </div>
+        <h3>How an AI onboarding system works.</h3>
+        <p>We show how a modern AI onboarding system can automate client intake, speed up communication, and turn a messy handoff into a scalable digital process — with real numbers from a live client deployment.</p>
+        <div class="blog-feature__footer">
+          <span>May 18, 2026</span>
+          <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.08em;">· 7 min read</span>
+          <span class="blog-card__link">Read article <span>→</span></span>
+        </div>
+      </div>
+    </a>
+
+    <!-- Filterable article grid -->
+    <div class="blog-preview__grid" data-filter-target="blog">
+
+      <a class="blog-card reveal" data-tags="websites ai-automation" data-delay="0" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Website post-launch</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Websites / AI automation</span>
+          <h4>Your website is finished. What happens next?</h4>
+          <p>The site is only the beginning. Here is how a simple website becomes a measurable, automated growth asset.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">May 16, 2026</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 5 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="marketing ai-automation" data-delay="80" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Marketing automation</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Marketing / AI automation</span>
+          <h4>Marketing and AI in 2026.</h4>
+          <p>AI has changed marketing, but it has not made judgement optional. The useful systems still need strategy.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">May 10, 2026</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 6 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="seo" data-delay="160" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">SEO &amp; organic search</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">SEO / Google</span>
+          <h4>What is SEO, and why does it matter for a website?</h4>
+          <p>A plain-language explanation of how search visibility works and what it means for small businesses.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">May 7, 2026</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 4 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="operations" data-delay="0" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Lead response time</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Operations</span>
+          <h4>Speed-to-lead: why the first 90 seconds win more jobs than your price.</h4>
+          <p>A plumber gets a lead at 11pm. A dental clinic gets a booking form on Friday evening. The business that responds first wins — almost every time.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">May 3, 2026</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 5 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="seo" data-delay="80" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">AI search visibility</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">SEO / GEO</span>
+          <h4>GEO: how to appear in ChatGPT answers, not just Google results.</h4>
+          <p>A growing share of your potential customers are asking AI assistants instead of searching Google. Here is what that means — and what to do about it.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">April 28, 2026</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 6 min</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="blog-card reveal" data-tags="operations" data-delay="160" href="#">
+        <div class="image-placeholder image-placeholder--blog-card">
+          <div class="image-placeholder__rings" aria-hidden="true"></div>
+          <div class="image-placeholder__inner">
+            <span class="image-placeholder__label">Headcount vs. automation</span>
+          </div>
+        </div>
+        <div class="blog-card__body">
+          <span class="blog-card__kicker">Operations / Hungary</span>
+          <h4>The real cost of a new hire in Hungary — and the AI alternative.</h4>
+          <p>When you factor in Szocho, sick days, and management time, a full-time employee costs 2–3× their salary. The comparison with a well-built automation is stark.</p>
+          <div class="blog-card__footer">
+            <span class="blog-card__date">April 21, 2026</span>
+            <span class="text-tertiary mono" style="font-size:11px; letter-spacing:0.06em;">· 7 min</span>
+          </div>
+        </div>
+      </a>
+
+    </div>
+    <!-- end filterable grid -->
+
+  </div>
+</section>
+
+<!-- ===== Newsletter CTA ===== -->
+<section class="newsletter-cta">
+  <div class="container">
+    <div class="newsletter-cta__inner reveal">
+      <div class="newsletter-cta__copy">
+        <span class="eyebrow eyebrow--accent">/ Növekedési Iránytű</span>
+        <h2>Once a month. What's actually working.</h2>
+        <p>No agency talk. No buzzwords. Just practical notes on what's moving the needle for Hungarian small businesses right now — from the tools we use to the results we see. Free, always.</p>
+      </div>
+      <div class="newsletter-cta__form-wrap">
+        <form class="newsletter-cta__form" onsubmit="return false;" novalidate>
+          <input type="email" placeholder="your@email.com" autocomplete="email" aria-label="Email address" />
+          <button class="btn btn--primary" type="submit">Subscribe — it's free</button>
+          <p class="newsletter-cta__fine">No spam. Unsubscribe anytime. GDPR compliant.</p>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Final CTA ===== -->
+<section class="final-cta">
+  <div class="container final-cta__inner reveal">
+    <h2>Ready to stop leaving money on the table?</h2>
+    <p>Start with a free 30-minute strategy call. No pitch — just an honest look at where AI can actually move the needle for your business.</p>
+    <div class="final-cta__ctas">
+      <a href="contact-en.html" class="btn btn--primary">Book free strategy call</a>
+      <a href="services-presence-en.html" class="btn btn--secondary">Or explore our services <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="index-en.html" class="logo">
+          <svg class="logo__mark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 4 L14 11 L12 13 L10 11 Z" fill="currentColor" />
+          </svg>
+          Compass Solutions
+        </a>
+        <p>Iránytű a növekedéshez. An AI growth partner for Hungarian SMBs — Budapest.</p>
+        <div class="footer__social" aria-label="Social links">
+          <a href="#" aria-label="Compass Solutions on Instagram">Instagram</a>
+          <a href="#" aria-label="Compass Solutions on TikTok">TikTok</a>
+          <a href="#" aria-label="Compass Solutions on Facebook">Facebook</a>
+          <a href="#" aria-label="Compass Solutions on LinkedIn">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h5>Services</h5>
+        <ul>
+          <li><a href="services-presence-en.html">Presence</a></li>
+          <li><a href="services-growth-en.html">Growth</a></li>
+          <li><a href="services-operations-en.html">Operations</a></li>
+          <li><a href="pricing-en.html">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="work-en.html">Work</a></li>
+          <li><a href="process-en.html">Process</a></li>
+          <li><a href="about-en.html">About</a></li>
+          <li><a href="contact-en.html">Contact</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="mailto:hello@compass.hu">hello@compass.hu</a></li>
+          <li><a href="tel:+3611234567">+36 1 123 4567</a></li>
+          <li><span class="text-tertiary">Budapest, Hungary</span></li>
+          <li><span class="text-tertiary">Replies within 1 business day</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Compass Solutions Kft.</span>
+      <span><a href="#">GDPR</a> · <a href="#">Privacy</a> · <a href="#">Impressum</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
