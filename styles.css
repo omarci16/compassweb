@@ -1110,35 +1110,81 @@ p { margin: 0 0 var(--space-2); }
     transform: none;
     animation: none;
   }
-  .growth-console__stats,
-  .growth-console__main {
-    grid-template-columns: 1fr 1fr;
-  }
-  .growth-console__chart,
-  .growth-console__funnel {
-    grid-column: 1 / -1;
-  }
   .console-badge {
     display: none;
   }
 }
 
+/* On phones, keep the dashboard LANDSCAPE — never let it stack to a tall
+   portrait card. We constrain its width so it sits as a compact, premium
+   widget below the hero, and shrink internal typography proportionally.
+   Goal: iPad-landscape aspect (roughly 16:10 / 16:9), not square. */
+@media (max-width: 720px) {
+  .growth-console--hero {
+    max-width: 96%;
+    min-height: 0;
+    margin: 0 auto;
+  }
+  .growth-console--hero .growth-console__window {
+    inset: auto;
+    margin: 0 auto;
+  }
+  .growth-console__body { padding: 12px; }
+  .growth-console__chrome { height: 26px; padding: 0 12px; }
+  .growth-console__chrome span { width: 6px; height: 6px; }
+  .growth-console__chrome em { font-size: 9px; }
+  .growth-console__chrome strong { padding: 2px 6px; font-size: 9px; }
+  .growth-console__head { gap: 10px; }
+  .growth-console__head small { font-size: 9px; margin-bottom: 3px; }
+  .growth-console__head h3 { font-size: 14px; }
+  .growth-console__toggle span { padding: 3px 6px; font-size: 9px; }
+  /* Keep 4 stat tiles in a single row — landscape vibe preserved */
+  .growth-console__stats {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px;
+    margin: 10px 0 8px;
+  }
+  .growth-console__stats div { padding: 6px 5px; }
+  .growth-console__stats small { font-size: 7.5px; letter-spacing: 0.06em; }
+  .growth-console__stats strong { font-size: 12px; margin-top: 3px; }
+  .growth-console__stats span { font-size: 8px; margin-top: 2px; }
+  /* Keep chart + funnel side-by-side, just compact */
+  .growth-console__main {
+    grid-template-columns: 1.3fr 1fr;
+    gap: 8px;
+  }
+  .growth-console__chart { min-height: 70px; }
+  .growth-console__funnel { padding: 8px 10px; }
+  .growth-console__funnel div { margin-bottom: 5px; gap: 6px; }
+  .growth-console__funnel strong { font-size: 9px; }
+  .growth-console__funnel div span:first-child { font-size: 9px; }
+  .growth-console__funnel span { height: 4px; }
+  /* Hide the bottom table on phones — it's the single biggest source of
+     vertical height and not load-bearing for the dashboard's vibe */
+  .growth-console__table { display: none; }
+}
+
+/* Smaller phones: tighten further, lose one stat tile if needed */
+@media (max-width: 480px) {
+  .growth-console--hero { max-width: 96%; }
+  .growth-console__body { padding: 10px; }
+  .growth-console__chrome em { display: none; }
+  .growth-console__stats { gap: 4px; margin: 8px 0 6px; }
+  .growth-console__stats div { padding: 5px 4px; }
+  .growth-console__stats strong { font-size: 11px; }
+  .growth-console__stats small { font-size: 7px; }
+  .growth-console__stats span { font-size: 7.5px; }
+  .growth-console__head h3 { font-size: 12.5px; }
+  .growth-console__head small { font-size: 8px; }
+  .growth-console__chart { min-height: 56px; }
+  .growth-console__funnel div { margin-bottom: 4px; }
+  .growth-console__funnel span { height: 3.5px; }
+}
+
+/* System preview frame stays a single column at small widths */
 @media (max-width: 520px) {
   .system-preview__frame {
     padding: 20px;
-  }
-  .growth-console__chrome em,
-  .growth-console__toggle {
-    display: none;
-  }
-  .growth-console__stats,
-  .growth-console__main {
-    grid-template-columns: 1fr;
-  }
-  .growth-console__table div {
-    grid-template-columns: 1fr;
-    gap: 6px;
-    padding: 12px;
   }
 }
 
@@ -5002,4 +5048,606 @@ p { margin: 0 0 var(--space-2); }
 .pillar-card:has(a[href*="operations"]):hover .pillar-card__link {
   color: var(--pillar-accent);
   transition: color var(--transition);
+}
+
+/* =========================================================
+   Mobile menu (hamburger overlay) + responsive refinements
+   The mobile menu is JS-injected into <body> from script.js.
+   Nav (z-index 100) stays above the menu (z-index 99) so the
+   logo + close toggle remain anchored and clickable.
+   ========================================================= */
+body.menu-open {
+  overflow: hidden;
+  /* iOS Safari elastic scroll containment */
+  touch-action: none;
+}
+
+.nav__toggle {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-primary);
+  transition: background var(--transition), border-color var(--transition);
+}
+.nav__toggle:hover {
+  border-color: var(--color-border);
+  background: rgba(255, 255, 255, 0.04);
+}
+.nav__toggle.is-open {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-border-light);
+}
+.theme-light .nav__toggle:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: var(--color-border);
+}
+.theme-light .nav__toggle.is-open {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--color-border-light);
+}
+
+.nav__toggle svg {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 20px;
+  height: 20px;
+  transition: opacity 0.22s var(--ease), transform 0.32s var(--ease);
+}
+.nav__toggle svg[data-icon="close"] {
+  opacity: 0;
+  transform: rotate(-90deg);
+}
+.nav__toggle.is-open svg[data-icon="hamburger"] {
+  opacity: 0;
+  transform: rotate(90deg);
+}
+.nav__toggle.is-open svg[data-icon="close"] {
+  opacity: 1;
+  transform: rotate(0);
+}
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px);
+  transition:
+    opacity 0.32s var(--ease),
+    transform 0.42s var(--ease),
+    visibility 0s linear 0.42s;
+  pointer-events: none;
+}
+
+.mobile-menu.is-open {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  pointer-events: auto;
+  transition:
+    opacity 0.32s var(--ease),
+    transform 0.42s var(--ease),
+    visibility 0s linear 0s;
+}
+
+.mobile-menu__panel {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 96px var(--gutter) calc(28px + env(safe-area-inset-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(62% 38% at 88% 4%, rgba(var(--accent-rgb), 0.18), transparent 64%),
+    radial-gradient(48% 36% at 8% 96%, rgba(var(--accent-rgb), 0.10), transparent 66%),
+    var(--color-bg);
+}
+
+.mobile-menu__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(var(--accent-rgb), 0.14) 1px, transparent 1.4px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(ellipse 80% 60% at 85% 12%, black 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 85% 12%, black 0%, transparent 72%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.mobile-menu__links {
+  position: relative;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-menu__item {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  transform: translateY(14px);
+  transition:
+    opacity 0.48s var(--ease),
+    transform 0.48s var(--ease);
+  transition-delay: calc(var(--i, 0) * 55ms + 80ms);
+}
+.theme-light .mobile-menu__item {
+  border-bottom-color: var(--color-border);
+}
+
+.mobile-menu.is-open .mobile-menu__item {
+  opacity: 1;
+  transform: none;
+}
+
+.mobile-menu__item a {
+  display: flex;
+  align-items: baseline;
+  gap: 18px;
+  padding: 18px 4px;
+  color: var(--color-text-primary);
+  transition:
+    color 0.2s var(--ease),
+    transform 0.3s var(--ease),
+    padding-left 0.3s var(--ease);
+}
+
+.mobile-menu__item a:hover,
+.mobile-menu__item a:focus-visible {
+  color: var(--color-accent);
+  padding-left: 8px;
+}
+
+.mobile-menu__num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
+  color: var(--color-text-tertiary);
+  min-width: 36px;
+  text-transform: uppercase;
+  transform: translateY(-2px);
+}
+
+.mobile-menu__item a:hover .mobile-menu__num,
+.mobile-menu__item a:focus-visible .mobile-menu__num {
+  color: var(--color-accent);
+}
+
+.mobile-menu__label {
+  font-family: var(--font-sans);
+  font-size: clamp(28px, 7.4vw, 38px);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.mobile-menu__footer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding-top: 32px;
+  margin-top: 8px;
+  border-top: 1px solid var(--color-border);
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 0.5s var(--ease) 0.42s,
+    transform 0.5s var(--ease) 0.42s;
+}
+
+.mobile-menu.is-open .mobile-menu__footer {
+  opacity: 1;
+  transform: none;
+}
+
+.mobile-menu__cta .btn {
+  width: 100%;
+  justify-content: center;
+  padding: 16px 28px;
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobile-menu,
+  .mobile-menu__item,
+  .mobile-menu__footer { transition-duration: 0s; transform: none; }
+}
+
+/* Show mobile menu only on small viewports — matches nav__toggle visibility */
+@media (min-width: 901px) {
+  .mobile-menu { display: none; }
+}
+
+/* =========================================================
+   Mobile-specific layout refinements
+   ========================================================= */
+
+/* Give the logo extra breathing room from the viewport edge on phones AND
+   tablets/square aspect ratios — the default 24px container gutter felt
+   tight under the logo mark. We add nav-specific horizontal padding on
+   top of the container so all other sections keep their normal gutter. */
+@media (max-width: 1100px) {
+  .nav__inner {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+@media (max-width: 600px) {
+  .nav__inner {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+/* Nav spacing on small screens — preserve breathing room on both sides */
+@media (max-width: 900px) {
+  .nav__inner { gap: 14px; padding-top: 14px; padding-bottom: 14px; }
+  .nav__cta { gap: 10px; }
+}
+@media (max-width: 480px) {
+  .nav__inner { padding-top: 12px; padding-bottom: 12px; }
+  .nav__cta { gap: 8px; }
+  .lang-switch { min-height: 36px; }
+  .lang-switch__option {
+    min-width: 34px;
+    min-height: 36px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+}
+@media (max-width: 380px) {
+  .logo { font-size: 14px; gap: 8px; }
+  .logo__mark { width: 20px; height: 20px; }
+}
+
+/* Hero — guard against overflow with long HU words, stack CTAs */
+@media (max-width: 600px) {
+  .hero {
+    padding-top: clamp(104px, 22vw, 140px);
+    padding-bottom: 24px;
+  }
+  .hero__title {
+    font-size: clamp(32px, 9vw, 48px);
+    line-height: 1.06;
+    letter-spacing: -0.02em;
+  }
+  .hero__sub {
+    font-size: 16.5px;
+    line-height: 1.55;
+  }
+  .hero__rotating-line { white-space: normal; }
+  .hero__ctas {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+  }
+  .hero__ctas .btn {
+    width: 100%;
+    justify-content: center;
+    padding: 16px 24px;
+  }
+  /* Tame the arcs so they don't dwarf the content */
+  .hero__arcs { width: 220%; top: -40%; }
+  .marquee { margin-top: clamp(40px, 8vw, 64px); }
+  .marquee__item { font-size: 12px; gap: 22px; padding: 0 22px; }
+  .marquee__item svg { width: 12px; height: 12px; }
+}
+
+@media (max-width: 380px) {
+  .hero__title {
+    font-size: clamp(28px, 8.6vw, 36px);
+  }
+}
+
+/* Slightly larger touch targets for buttons on mobile */
+@media (max-width: 600px) {
+  .btn {
+    padding: 13px 22px;
+    font-size: 14.5px;
+  }
+}
+
+/* Section padding — bring down the top end of the clamp */
+@media (max-width: 600px) {
+  .section { padding: clamp(56px, 12vw, 96px) 0; }
+  .section--tight { padding: clamp(40px, 9vw, 72px) 0; }
+}
+
+/* Section heads tighter on small screens */
+@media (max-width: 600px) {
+  .section__head { margin-bottom: clamp(28px, 7vw, 48px); }
+  .section__head--center { text-align: left; align-items: flex-start; }
+}
+
+/* Cards: looser internal padding on tiny screens, ensure they don't get squashed */
+@media (max-width: 600px) {
+  .card { padding: 24px; }
+  .problem-card { padding: 28px 24px; }
+  .pillar-card { padding: 32px 24px; }
+  .pillar-card h3 { font-size: 24px; }
+  .module { padding: 28px 24px; }
+}
+
+/* Stats: 2-col on phone, full-width if very tight */
+@media (max-width: 480px) {
+  .stats__grid { grid-template-columns: 1fr 1fr; gap: 24px; }
+  .stat__num { font-size: clamp(36px, 9vw, 48px); }
+}
+
+/* Case studies: stack with proper visual separation */
+@media (max-width: 600px) {
+  .case-card__body { padding: 28px 24px; }
+  .case-card__visual { padding: 28px 24px; }
+  .case-card__stat { font-size: clamp(32px, 10vw, 44px); }
+}
+
+/* Tier pricing cards on phone */
+@media (max-width: 600px) {
+  .tier { padding: 28px 24px; }
+  .tier__price { font-size: 38px; }
+}
+
+/* Final CTA — stack and full-width buttons */
+@media (max-width: 600px) {
+  .final-cta { padding: clamp(64px, 14vw, 104px) 0; }
+  .final-cta p { font-size: 16px; margin-bottom: 28px; }
+  .final-cta__ctas { flex-direction: column; align-items: stretch; gap: 12px; }
+  .final-cta__ctas .btn { width: 100%; justify-content: center; }
+}
+
+/* Upsell + CTA stripe — stack on phone */
+@media (max-width: 700px) {
+  .upsell {
+    padding: 32px 24px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .upsell .btn { width: 100%; justify-content: center; }
+  .cta-stripe {
+    padding: 24px;
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+  }
+  .cta-stripe .btn { width: 100%; justify-content: center; }
+}
+
+/* Next pillars cards */
+@media (max-width: 600px) {
+  .next-pillar { padding: 32px 24px; }
+}
+
+/* Footer — generous spacing on phone, brand block sits clean */
+@media (max-width: 700px) {
+  .footer { padding: 56px 0 28px; }
+  .footer__grid { gap: 40px; margin-bottom: 48px; }
+  .footer__bottom {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    text-align: left;
+  }
+}
+
+/* Brief / contact stepper on phone — generous tap targets */
+@media (max-width: 600px) {
+  .brief { padding: 28px 22px; border-radius: var(--radius-md); }
+  .brief__q { font-size: 22px; line-height: 1.25; margin-bottom: 26px; }
+  .brief__option { padding: 16px 18px; font-size: 14.5px; }
+  .brief__nav { gap: 12px; }
+  .brief__nav .btn { flex: 1; justify-content: center; }
+}
+
+/* Process page timeline — looser stacking */
+@media (max-width: 700px) {
+  .timeline__row { padding: 28px 0; }
+  .belief { padding: 24px 0; gap: 12px; }
+}
+
+/* Search-shift (AI search visibility) on phone */
+@media (max-width: 600px) {
+  .search-shift__hero h2 { font-size: clamp(28px, 8vw, 44px); }
+  .search-shift__card { padding: 22px 20px; }
+}
+
+/* Referral form sticky behavior + spacing */
+@media (max-width: 600px) {
+  .referral-form { padding: 24px 22px; }
+  .referral-form h3 { font-size: 22px; margin-bottom: 18px; }
+  .referral-program h2 { font-size: clamp(32px, 8.5vw, 52px); }
+}
+
+/* Newsletter CTA */
+@media (max-width: 600px) {
+  .newsletter-cta__inner { padding: 32px 24px; }
+  .newsletter-cta__copy h2 { font-size: clamp(26px, 7vw, 36px); }
+}
+
+/* Blog hero + cards — featured article stays visually distinct on phone
+   (bigger headline, accent border + glow, larger image, "Kiemelt" badge) */
+@media (max-width: 700px) {
+  .blog-feature {
+    border-color: rgba(var(--accent-rgb), 0.32);
+    background:
+      radial-gradient(circle at 12% 0%, rgba(var(--accent-rgb), 0.10), transparent 40%),
+      var(--color-surface);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.36);
+    margin-bottom: 32px;
+  }
+  .blog-feature::before {
+    opacity: 1;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-accent), transparent);
+  }
+  .blog-feature__media .image-placeholder--blog-feature {
+    aspect-ratio: 16 / 10;
+  }
+  .blog-feature__body {
+    padding: 32px 26px 36px;
+  }
+  .blog-feature__meta::before {
+    content: 'KIEMELT';
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    margin-right: 6px;
+    border: 1px solid rgba(var(--accent-rgb), 0.38);
+    border-radius: var(--radius-sm);
+    background: rgba(var(--accent-rgb), 0.10);
+    color: var(--color-accent);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+  }
+  html[lang="en"] .blog-feature__meta::before { content: 'FEATURED'; }
+  .blog-feature h3 {
+    font-size: clamp(26px, 7.8vw, 34px);
+    line-height: 1.15;
+    margin-bottom: 14px;
+  }
+  .blog-feature p {
+    font-size: 15.5px;
+    line-height: 1.6;
+  }
+  /* Regular cards stay compact so the contrast with the featured one is
+     immediate — smaller image, tighter padding, smaller heading */
+  .blog-card {
+    background: rgba(17, 17, 17, 0.72);
+  }
+  .blog-card .image-placeholder {
+    aspect-ratio: 16 / 9;
+  }
+  .blog-card__body { padding: 22px 20px; }
+  .blog-card h4 { font-size: 18px; }
+  /* Homepage shows only 2 blog cards on mobile — hide the third */
+  .blog-preview__grid .blog-card:last-child { display: none; }
+  .blog-subscribe-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .blog-subscribe-inline input[type="email"] {
+    max-width: none;
+    width: 100%;
+  }
+  .blog-subscribe-inline .btn { width: 100%; justify-content: center; }
+}
+
+/* About hero + glimpse */
+@media (max-width: 600px) {
+  .about-hero__text h1 { margin-top: 12px; }
+  .about-glimpse__text h2 { font-size: clamp(26px, 7.4vw, 38px); }
+  .founder { gap: 14px; }
+  .founder__avatar { width: 52px; height: 52px; font-size: 17px; }
+}
+
+/* Service nav card on small phones */
+@media (max-width: 480px) {
+  .service-nav__card { padding: 16px; gap: 12px; }
+  .service-nav__index { width: 30px; height: 30px; }
+  .service-nav__content strong { font-size: 18px; }
+}
+
+/* Grant advisory panel stacks gracefully */
+@media (max-width: 600px) {
+  .grant-advisory__inner { padding: 28px 24px; }
+  .grant-advisory__panel { padding: 22px; }
+}
+
+/* System preview frame (homepage console) */
+@media (max-width: 600px) {
+  .system-preview__frame { padding: 24px 20px; }
+}
+
+/* Approach methodology + visual */
+@media (max-width: 600px) {
+  .method-frame { min-height: 0; padding: 24px 22px 20px; }
+  .approach-method__lede { font-size: clamp(20px, 6vw, 26px); }
+}
+
+/* Ops dashboard / system layouts — extra defensive on tiny phones */
+@media (max-width: 480px) {
+  .ops-system { padding: 22px 18px; }
+  .ops-system h3 { font-size: clamp(26px, 8vw, 36px); }
+  .ops-builds { gap: 12px; }
+  .ops-build { padding: 22px 20px; }
+}
+
+/* Page header — give content room to breathe on phones, shrink H1 so HU
+   words like "Átláthatóan" never get clipped at the right edge */
+@media (max-width: 600px) {
+  .page-header { padding: clamp(96px, 22vw, 132px) 0 clamp(28px, 7vw, 56px); }
+  .page-header__sub { font-size: 16.5px; }
+  .page-header h1,
+  .about-hero__text h1,
+  .blog-hero__text h1 {
+    font-size: clamp(30px, 8.4vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+}
+@media (max-width: 380px) {
+  .page-header h1,
+  .about-hero__text h1,
+  .blog-hero__text h1 {
+    font-size: clamp(26px, 8vw, 32px);
+  }
+}
+
+/* Filter chips stay clean on phone */
+@media (max-width: 480px) {
+  .filters { gap: 6px; margin-bottom: 24px; }
+  .filter { padding: 7px 12px; font-size: 10.5px; }
+}
+
+/* Stats payment strip */
+@media (max-width: 480px) {
+  .payment-strip__item { padding: 0 2px; }
+}
+
+/* Lang switch in nav on smallest screens */
+@media (max-width: 360px) {
+  .nav__cta .lang-switch { display: none; }
+}
+
+/* Tap target — anchors inside footer + meta */
+@media (max-width: 600px) {
+  .footer__col a,
+  .footer__brand a,
+  .footer__social a {
+    display: inline-block;
+    padding: 2px 0;
+  }
+}
+
+/* Avoid horizontal scroll caused by hero arcs / page-header decoration */
+.hero, .page-header, .blog-hero { overflow-x: clip; }
+
+/* Prevent unwanted auto-hyphenation in HU headings on mobile */
+h1, h2, h3, h4, h5,
+.hero-title,
+.page-header h1,
+.mobile-menu__label {
+  -webkit-hyphens: manual;
+  hyphens: manual;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+/* iOS safe-area for the very bottom of the page */
+@supports (padding: max(0px)) {
+  .footer { padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 24px)); }
 }

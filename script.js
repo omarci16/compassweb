@@ -133,6 +133,118 @@
     show(0);
   }
 
+  // Mobile menu — JS-built overlay so we don't have to touch every HTML page.
+  // Reuses the existing .nav__links, .lang-switch, and primary .btn from the nav
+  // so HU/EN copy stays in sync automatically.
+  const navEl = document.querySelector('.nav');
+  // Inject the hamburger toggle if a page is missing it (most interior pages do).
+  let navToggle = navEl && navEl.querySelector('.nav__toggle');
+  if (navEl && !navToggle) {
+    const ctaContainer = navEl.querySelector('.nav__cta');
+    if (ctaContainer) {
+      navToggle = document.createElement('button');
+      navToggle.className = 'nav__toggle';
+      navToggle.type = 'button';
+      ctaContainer.appendChild(navToggle);
+    }
+  }
+  if (navEl && navToggle) {
+    // Upgrade the toggle: dual icons (hamburger + close) that crossfade on .is-open
+    const isHU = (document.documentElement.lang || 'hu').toLowerCase().startsWith('hu');
+    const labelOpen = isHU ? 'Menü megnyitása' : 'Open menu';
+    const labelClose = isHU ? 'Menü bezárása' : 'Close menu';
+    navToggle.setAttribute('aria-label', labelOpen);
+    navToggle.setAttribute('aria-expanded', 'false');
+    navToggle.innerHTML = `
+      <svg data-icon="hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      <svg data-icon="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M6 18L18 6"/></svg>
+    `;
+
+    // Build the mobile menu overlay once and append to <body>.
+    const sourceLinks = Array.from(navEl.querySelectorAll('.nav__links a'));
+    const primaryCta = navEl.querySelector('.nav__cta .btn--primary');
+
+    const menu = document.createElement('div');
+    menu.className = 'mobile-menu';
+    menu.setAttribute('aria-hidden', 'true');
+    menu.setAttribute('role', 'dialog');
+    menu.setAttribute('aria-modal', 'true');
+    menu.setAttribute('aria-label', isHU ? 'Mobil menü' : 'Mobile menu');
+
+    const linksHTML = sourceLinks
+      .map((a, i) => {
+        const num = String(i + 1).padStart(2, '0');
+        const href = a.getAttribute('href') || '#';
+        const label = a.textContent.trim();
+        const isActive = a.classList.contains('active') ? ' is-active' : '';
+        return `
+          <li class="mobile-menu__item${isActive}" style="--i:${i}">
+            <a href="${href}">
+              <span class="mobile-menu__num">/ ${num}</span>
+              <span class="mobile-menu__label">${label}</span>
+            </a>
+          </li>`;
+      })
+      .join('');
+
+    const ctaHTML = primaryCta
+      ? `<div class="mobile-menu__cta"><a href="${primaryCta.getAttribute(
+          'href'
+        ) || '#'}" class="btn btn--primary">${primaryCta.innerHTML}</a></div>`
+      : '';
+
+    menu.innerHTML = `
+      <div class="mobile-menu__panel">
+        <ul class="mobile-menu__links" role="list">
+          ${linksHTML}
+        </ul>
+        ${ctaHTML ? `<div class="mobile-menu__footer">${ctaHTML}</div>` : ''}
+      </div>
+    `;
+
+    document.body.appendChild(menu);
+
+    const open = () => {
+      document.body.classList.add('menu-open');
+      navToggle.classList.add('is-open');
+      navToggle.setAttribute('aria-expanded', 'true');
+      navToggle.setAttribute('aria-label', labelClose);
+      menu.classList.add('is-open');
+      menu.setAttribute('aria-hidden', 'false');
+    };
+    const close = () => {
+      document.body.classList.remove('menu-open');
+      navToggle.classList.remove('is-open');
+      navToggle.setAttribute('aria-expanded', 'false');
+      navToggle.setAttribute('aria-label', labelOpen);
+      menu.classList.remove('is-open');
+      menu.setAttribute('aria-hidden', 'true');
+    };
+
+    navToggle.addEventListener('click', () => {
+      if (document.body.classList.contains('menu-open')) close();
+      else open();
+    });
+
+    // Close when any link inside the menu is activated
+    menu.addEventListener('click', e => {
+      if (e.target.closest('a')) close();
+    });
+
+    // Close on ESC
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.body.classList.contains('menu-open')) close();
+    });
+
+    // Auto-close if the viewport grows past the mobile breakpoint
+    const mq = window.matchMedia('(min-width: 901px)');
+    const onMq = e => {
+      if (e.matches && document.body.classList.contains('menu-open')) close();
+    };
+    if (mq.addEventListener) mq.addEventListener('change', onMq);
+    else if (mq.addListener) mq.addListener(onMq);
+  }
+
   // Hero word rotator — animate a single dynamic word in the headline.
   // Container width transitions between word widths so the line never jumps.
   const initRotator = (rot) => {
