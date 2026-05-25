@@ -132,4 +132,82 @@
     });
     show(0);
   }
+
+  // Hero word rotator — animate a single dynamic word in the headline.
+  // Container width transitions between word widths so the line never jumps.
+  const initRotator = (rot) => {
+    const words = Array.from(rot.querySelectorAll('.word-rotator__word'));
+    if (words.length < 2) return;
+    const interval = parseInt(rot.dataset.interval || '2800', 10);
+
+    let activeIndex = words.findIndex(w => w.classList.contains('is-active'));
+    if (activeIndex < 0) activeIndex = 0;
+    words.forEach((w, i) => w.classList.toggle('is-active', i === activeIndex));
+
+    let widths = [];
+    const measure = () => {
+      widths = words.map(w => {
+        const prevCss = w.style.cssText;
+        w.style.position = 'absolute';
+        w.style.opacity = '0';
+        w.style.display = 'inline-block';
+        w.style.transform = 'none';
+        w.style.filter = 'none';
+        const width = Math.ceil(w.getBoundingClientRect().width);
+        w.style.cssText = prevCss;
+        return width;
+      });
+      rot.style.width = widths[activeIndex] + 'px';
+    };
+
+    const start = () => {
+      measure();
+      rot.classList.add('is-ready');
+
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+      let timer = null;
+
+      const tick = () => {
+        const current = words[activeIndex];
+        const nextIndex = (activeIndex + 1) % words.length;
+        const next = words[nextIndex];
+
+        current.classList.remove('is-active');
+        current.classList.add('is-leaving');
+        next.classList.add('is-active');
+        activeIndex = nextIndex;
+        rot.style.width = widths[nextIndex] + 'px';
+
+        setTimeout(() => current.classList.remove('is-leaving'), 720);
+      };
+
+      const startCycle = () => {
+        if (timer || reduced.matches) return;
+        timer = setInterval(tick, interval);
+      };
+      const stopCycle = () => {
+        if (timer) { clearInterval(timer); timer = null; }
+      };
+
+      startCycle();
+
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) stopCycle();
+        else startCycle();
+      });
+
+      let resizeRaf;
+      window.addEventListener('resize', () => {
+        cancelAnimationFrame(resizeRaf);
+        resizeRaf = requestAnimationFrame(measure);
+      }, { passive: true });
+    };
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(start);
+    } else {
+      start();
+    }
+  };
+  document.querySelectorAll('[data-rotator]').forEach(initRotator);
 })();

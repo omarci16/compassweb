@@ -508,6 +508,79 @@ p { margin: 0 0 var(--space-2); }
   margin: 0 0 var(--space-4);
 }
 
+/* ==========================================================
+   Hero word rotator — the rotating headline word.
+   Static text stays neutral; the dynamic word lifts in
+   accent gold (compass needle pointing at what matters).
+   Container width animates between words so the line never
+   reflows abruptly. No-JS fallback shows only the first word.
+   ========================================================== */
+.word-rotator {
+  display: inline-block;
+  vertical-align: baseline;
+  color: var(--color-accent);
+  white-space: nowrap;
+  line-height: inherit;
+}
+
+.word-rotator__word {
+  display: inline-block;
+}
+
+/* No-JS fallback: hide all but the active word, leaving it in normal flow. */
+.word-rotator:not(.is-ready) .word-rotator__word:not(.is-active) {
+  display: none;
+}
+
+/* Once JS has measured widths, switch the container to an inline-grid stack.
+   All words sit in the same grid cell, so their text baselines coincide —
+   and the inline-grid's baseline aligns naturally with the surrounding
+   inline text (e.g. the trailing "is."). */
+.word-rotator.is-ready {
+  display: inline-grid;
+  grid-template-areas: 'stack';
+  vertical-align: baseline;
+  transition: width 620ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.word-rotator.is-ready .word-rotator__word {
+  grid-area: stack;
+  justify-self: start;
+  align-self: start;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(0.34em);
+  filter: blur(6px);
+  transition:
+    opacity 520ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 620ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 520ms ease;
+  will-change: opacity, transform, filter;
+}
+
+.word-rotator.is-ready .word-rotator__word.is-active {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+.word-rotator.is-ready .word-rotator__word.is-leaving {
+  opacity: 0;
+  transform: translateY(-0.42em);
+  filter: blur(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-rotator.is-ready {
+    transition: none;
+  }
+  .word-rotator.is-ready .word-rotator__word {
+    transition: opacity 220ms ease;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
 .hero__sub {
   font-size: clamp(18px, 1.6vw, 22px);
   line-height: 1.55;
@@ -622,6 +695,7 @@ p { margin: 0 0 var(--space-2); }
   padding: clamp(48px, 7vw, 96px) 0;
   background: var(--color-bg);
   overflow: hidden;
+  border-top: 1px solid var(--color-border);
 }
 
 .system-preview::before {
