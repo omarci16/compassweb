@@ -1,4 +1,4 @@
-# CLAUDE.md — Compass Solutions Website Build Brief
+# CLAUDE.md — Compass Systems Website Build Brief
 
 > **Source of truth.** Read this file in full before generating code, copy, or design. Every decision must trace back to a rule here. When in doubt, default to: **premium, restrained, problem-first, measurably useful.**
 
@@ -6,7 +6,7 @@
 
 ## 0. The One Sentence
 
-> **Compass Solutions helps Hungarian SMBs win more business, respond faster, and run leaner — through one connected stack of websites, growth systems, and AI-powered operations.**
+> **Compass Systems helps Hungarian SMBs win more business, respond faster, and run leaner — through one connected stack of websites, growth systems, and AI-powered operations.**
 
 If a section of the site doesn't reinforce this sentence, it shouldn't exist.
 
