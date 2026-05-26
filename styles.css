@@ -5653,9 +5653,10 @@ h1, h2, h3, h4, h5,
 }
 
 /* Mobile nav — opaque only once scrolled past the hero, like desktop.
-   When the mobile menu is open, the nav goes transparent so the menu's
-   gradient panel reads through it as one seamless surface (no hard black
-   stripe at the top). */
+   When the mobile menu is open, we paint the nav with the SAME radial
+   gradients as the mobile-menu panel, anchored in viewport units so the
+   two surfaces line up pixel-for-pixel — no hard black stripe at the top,
+   no see-through gap above or below the bar. */
 @media (max-width: 900px) {
   .nav.scrolled {
     background: var(--color-bg);
@@ -5669,23 +5670,49 @@ h1, h2, h3, h4, h5,
   }
   body.menu-open .nav,
   body.menu-open .nav.scrolled {
-    background: transparent;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    border-bottom-color: transparent;
+    background:
+      radial-gradient(62vw 38vh at 88vw 4vh, rgba(var(--accent-rgb), 0.18), transparent 64%),
+      radial-gradient(48vw 36vh at 8vw 96vh, rgba(var(--accent-rgb), 0.10), transparent 66%),
+      var(--color-bg) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border-bottom-color: transparent !important;
   }
+  /* Extend the painted area up into the iOS safe-area (notch / status bar)
+     so there's nothing visible above the nav, and use dvh so the menu
+     follows the address bar collapse without exposing the page. */
+  body.menu-open .nav {
+    padding-top: env(safe-area-inset-top);
+    margin-top: calc(-1 * env(safe-area-inset-top));
+  }
+  .mobile-menu { height: 100dvh; }
 }
 
 /* Approach methodology — mobile alignment polish.
    The HU lede ("Segítünk bevezetni a mesterséges intelligenciát…") is much
    longer than its EN counterpart, which causes uneven line wrapping that
-   reads as the block "stretching to the right". Balance the wrap and drop
-   the middle paragraph on phones so the column stays tight. */
+   reads as the block "stretching to the right". Constrain the size and
+   improve wrapping; drop the middle paragraph on phones so the column
+   stays tight. */
 @media (max-width: 720px) {
   .approach-method__lede {
-    text-wrap: balance;
+    font-size: clamp(19px, 5.4vw, 23px);
+    line-height: 1.22;
+    letter-spacing: -0.015em;
     max-width: 100%;
     text-align: left;
+    text-wrap: pretty;
+    -webkit-hyphens: none;
+    hyphens: none;
+    overflow-wrap: normal;
+    word-break: keep-all;
   }
   .approach-method__copy p:nth-of-type(2) { display: none; }
+  .approach-method__copy,
+  .approach-method__visual,
+  .method-frame { max-width: 100%; overflow: hidden; }
+  .approach-method__cta {
+    max-width: 100%;
+    white-space: normal;
+  }
 }
