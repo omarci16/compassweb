@@ -51,17 +51,19 @@ export async function startGoogleMapsScrape(
   // Per-term cap, so a 3-term run for maxResults=300 = 100 per term
   const perTermLimit = Math.max(20, Math.ceil(input.maxResults / Math.max(1, input.searchTerms.length)));
 
-  const run = await apify.actor(GOOGLE_MAPS_ACTOR).start({
-    searchStringsArray,
-    locationQuery: input.city === "Hungary" ? country : `${input.city}, ${country}`,
-    maxCrawledPlacesPerSearch: perTermLimit,
-    language: "hu",
-    countryCode: "hu",
-    skipClosedPlaces: true,
-    scrapeContacts: true,           // emails, social links if present
-    deeperCityScrape: false,
-    maximumLeadsEnrichmentRecords: 0,
-    ...(input.webhookUrl
+  const run = await apify.actor(GOOGLE_MAPS_ACTOR).start(
+    {
+      searchStringsArray,
+      locationQuery: input.city === "Hungary" ? country : `${input.city}, ${country}`,
+      maxCrawledPlacesPerSearch: perTermLimit,
+      language: "hu",
+      countryCode: "hu",
+      skipClosedPlaces: true,
+      scrapeContacts: true,           // emails, social links if present
+      deeperCityScrape: false,
+      maximumLeadsEnrichmentRecords: 0,
+    },
+    input.webhookUrl
       ? {
           webhooks: [
             {
@@ -70,8 +72,8 @@ export async function startGoogleMapsScrape(
             },
           ],
         }
-      : {}),
-  });
+      : undefined,
+  );
 
   return {
     id: run.id,
