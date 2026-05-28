@@ -80,6 +80,24 @@
 
 html { scroll-behavior: smooth; }
 
+/* =========================================================
+   Lenis smooth scroll — JS interpolates the real scroll
+   position (weight + momentum). While Lenis is active, native
+   smooth must yield to it; without JS this block is inert and
+   the native scroll-behavior above remains the graceful fallback.
+   ========================================================= */
+html.lenis,
+html.lenis body { height: auto; }
+.lenis.lenis-smooth { scroll-behavior: auto !important; }
+.lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-stopped { overflow: hidden; }
+.lenis.lenis-scrolling iframe { pointer-events: none; }
+
+/* Honour reduced-motion: skip eased scroll entirely (JS bails too). */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -1055,22 +1073,22 @@ p { margin: 0 0 var(--space-2); }
 .console-badge--right {
   right: 0;
   top: 88px;
-  animation-delay: -1.8s;
+  /* animation-delay offset now handled per-element in .growth-console--hero.in */
 }
 .console-badge--bottom {
   left: 18%;
   bottom: 0;
-  animation-delay: -3.2s;
+  /* animation-delay offset now handled per-element in .growth-console--hero.in */
 }
 
 @keyframes consoleFloat {
-  0%, 100% { transform: perspective(1200px) rotateX(3deg) rotateY(-4deg) translateY(0); }
-  50% { transform: perspective(1200px) rotateX(3deg) rotateY(-4deg) translateY(-10px); }
+  0%, 100% { transform: perspective(1200px) rotateX(3deg)   rotateY(-4deg)   translateY(0px); }
+  50%       { transform: perspective(1200px) rotateX(2deg)   rotateY(-3.2deg) translateY(-18px); }
 }
 
 @keyframes badgeFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translateY(0px)    translateX(0px); }
+  50%       { transform: translateY(-14px) translateX(3px); }
 }
 
 @keyframes chartPulse {
@@ -1086,6 +1104,85 @@ p { margin: 0 0 var(--space-2); }
 @keyframes funnelFill {
   0%, 100% { transform: translateX(0); opacity: 0.82; }
   50% { transform: translateX(4px); opacity: 1; }
+}
+
+/* =========================================================
+   Hero dashboard — scroll reveal entrance
+   ========================================================= */
+
+/* Outer container: let standard .reveal handle the fade,
+   but speed it up so the window animation is the focal point */
+.growth-console--hero.reveal {
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+/* Window: suppress the always-on float until after reveal */
+.growth-console--hero:not(.in) .growth-console__window {
+  opacity: 0;
+  animation: none;
+}
+
+/* Window reveal: starts at steep 3D tilt, settles to resting angle,
+   then chains seamlessly into the continuous float */
+.growth-console--hero.in .growth-console__window {
+  animation:
+    windowReveal 1s cubic-bezier(0.16, 1, 0.3, 1) both,
+    consoleFloat 7.5s ease-in-out 1.1s infinite;
+}
+
+/* Badges: hidden before reveal, then staggered slide-in */
+.growth-console--hero:not(.in) .console-badge {
+  opacity: 0;
+}
+
+.growth-console--hero.in .console-badge--left {
+  animation:
+    badgeSlideIn 0.62s cubic-bezier(0.16, 1, 0.3, 1) 0.44s both,
+    badgeFloat 6.2s ease-in-out 1.06s infinite;
+}
+
+.growth-console--hero.in .console-badge--right {
+  animation:
+    badgeSlideIn 0.62s cubic-bezier(0.16, 1, 0.3, 1) 0.60s both,
+    badgeFloat 5.8s ease-in-out 1.22s infinite;
+}
+
+.growth-console--hero.in .console-badge--bottom {
+  animation:
+    badgeSlideIn 0.62s cubic-bezier(0.16, 1, 0.3, 1) 0.76s both,
+    badgeFloat 6.6s ease-in-out 1.38s infinite;
+}
+
+/* The tilt-and-settle: window unfurls from a steep perspective angle */
+@keyframes windowReveal {
+  0% {
+    opacity: 0;
+    transform: perspective(1200px) rotateX(22deg) rotateY(-14deg) scale(0.88) translateY(20px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1200px) rotateX(3deg) rotateY(-4deg) scale(1) translateY(0px);
+    box-shadow:
+      0 34px 90px rgba(0, 0, 0, 0.60),
+      0 0 0 1px rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* Badge entrance: each one floats up from below */
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (max-width: 1000px) {
@@ -2755,13 +2852,13 @@ p { margin: 0 0 var(--space-2); }
   width: 16px; height: 16px;
   position: relative;
   flex-shrink: 0;
+  transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .faq__q .plus::before,
 .faq__q .plus::after {
   content: '';
   position: absolute;
   background: currentColor;
-  transition: transform var(--transition);
 }
 .faq__q .plus::before {
   top: 50%; left: 0; right: 0;
@@ -2771,17 +2868,21 @@ p { margin: 0 0 var(--space-2); }
   left: 50%; top: 0; bottom: 0;
   width: 1px; transform: translateX(-50%);
 }
-.faq__item.open .faq__q .plus::after { transform: translateX(-50%) rotate(90deg); opacity: 0; }
+/* Whole icon rotates 45° — + becomes × */
+.faq__item.open .faq__q .plus { transform: rotate(45deg); }
 .faq__a {
-  max-height: 0;
+  height: 0;
   overflow: hidden;
-  transition: max-height 0.3s var(--ease);
+  /* height driven by JS for pixel-perfect spring; opacity fades content in */
+  transition: height 0.48s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.32s ease;
+  opacity: 0;
   color: var(--color-text-secondary);
   font-size: 15px;
   line-height: 1.65;
 }
 .faq__a-inner { padding: 0 0 20px; max-width: 740px; }
-.faq__item.open .faq__a { max-height: 400px; }
+.faq__item.open .faq__a { opacity: 1; }
 
 /* =========================================================
    Portfolio / work grid
@@ -3793,7 +3894,11 @@ p { margin: 0 0 var(--space-2); }
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   overflow: hidden;
-  transition: border-color var(--transition), background var(--transition), transform var(--transition);
+  /* Long durations serve the .reveal scroll animation (opacity + lift).
+     transform and opacity must be here — coming after .reveal in the sheet,
+     this declaration wins on specificity; without opacity the card just pops. */
+  transition: border-color var(--transition), background var(--transition),
+              transform 0.6s var(--ease), opacity 0.6s var(--ease);
 }
 
 .blog-feature:hover,
@@ -3801,6 +3906,8 @@ p { margin: 0 0 var(--space-2); }
   border-color: var(--color-border-light);
   background: var(--color-surface-3);
   transform: translateY(-2px);
+  /* Override duration to keep the hover lift snappy. */
+  transition-duration: 0.2s;
 }
 
 .blog-feature {
@@ -4144,8 +4251,8 @@ p { margin: 0 0 var(--space-2); }
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(60% 40% at 24% 38%, rgba(var(--accent-rgb), 0.12) 0%, transparent 60%),
-    radial-gradient(38% 28% at 82% 16%, rgba(var(--accent-rgb), 0.07) 0%, transparent 68%);
+    radial-gradient(60% 40% at 24% 38%, rgba(var(--accent-rgb), 0.38) 0%, transparent 60%),
+    radial-gradient(38% 28% at 82% 16%, rgba(var(--accent-rgb), 0.22) 0%, transparent 68%);
   pointer-events: none;
   z-index: 0;
 }
@@ -4154,11 +4261,70 @@ p { margin: 0 0 var(--space-2); }
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image: radial-gradient(rgba(var(--accent-rgb), 0.11) 1px, transparent 1.4px);
+  background-image: radial-gradient(rgba(var(--accent-rgb), 0.09) 1px, transparent 1.4px);
   background-size: 28px 28px;
   mask-image: radial-gradient(ellipse 72% 56% at 28% 44%, black 0%, transparent 74%);
   -webkit-mask-image: radial-gradient(ellipse 72% 56% at 28% 44%, black 0%, transparent 74%);
   z-index: 0;
+}
+
+/* =========================================================
+   Hero aurora — the blog hero's glow + dot-mesh recipe,
+   reused across work / process / pricing / about heroes.
+   Same accent colour + same gradient structure everywhere;
+   per-page modifiers only shift the shape + position.
+   ========================================================= */
+.hero-aurora {
+  position: relative;
+  overflow: hidden;
+}
+.hero-aurora > .container {
+  position: relative;
+  z-index: 1;
+}
+.hero-aurora::before,
+.hero-aurora::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+.hero-aurora::before {
+  background:
+    radial-gradient(var(--aurora-g1), rgba(var(--accent-rgb), 0.38) 0%, transparent 60%),
+    radial-gradient(var(--aurora-g2), rgba(var(--accent-rgb), 0.22) 0%, transparent 68%);
+}
+.hero-aurora::after {
+  background-image: radial-gradient(rgba(var(--accent-rgb), 0.09) 1px, transparent 1.4px);
+  background-size: 28px 28px;
+  -webkit-mask-image: var(--aurora-mask);
+  mask-image: var(--aurora-mask);
+}
+
+/* Case studies — glow anchored low-left, sweeping to a small top-right spark */
+.hero-aurora--work {
+  --aurora-g1: 64% 42% at 18% 32%;
+  --aurora-g2: 40% 30% at 86% 22%;
+  --aurora-mask: radial-gradient(ellipse 76% 58% at 24% 42%, black 0%, transparent 74%);
+}
+/* Process — glow leans top-right with a soft low-left counterweight */
+.hero-aurora--process {
+  --aurora-g1: 58% 40% at 80% 26%;
+  --aurora-g2: 42% 32% at 14% 72%;
+  --aurora-mask: radial-gradient(ellipse 74% 58% at 74% 38%, black 0%, transparent 74%);
+}
+/* Pricing — wide glow crowning the top centre, secondary low-right */
+.hero-aurora--pricing {
+  --aurora-g1: 64% 44% at 50% 4%;
+  --aurora-g2: 38% 30% at 88% 64%;
+  --aurora-mask: radial-gradient(ellipse 84% 56% at 50% 14%, black 0%, transparent 76%);
+}
+/* About — glow behind the left text column, spark behind the right portrait */
+.hero-aurora--about {
+  --aurora-g1: 56% 42% at 30% 34%;
+  --aurora-g2: 44% 32% at 92% 70%;
+  --aurora-mask: radial-gradient(ellipse 72% 60% at 34% 46%, black 0%, transparent 74%);
 }
 
 .blog-hero__inner {
@@ -4774,6 +4940,25 @@ p { margin: 0 0 var(--space-2); }
   --theme-label: "03 \2009\2014\2009 OPERATIONS";
 }
 
+/* Nav + footer stay on the default white accent regardless of pillar theme —
+   they're global chrome, not part of the themed page body. */
+.theme-presence .nav,
+.theme-growth .nav,
+.theme-operations .nav,
+.theme-presence .footer,
+.theme-growth .footer,
+.theme-operations .footer {
+  --accent-rgb: 160, 106, 240;
+  --color-accent: #FFFFFF;
+  --color-accent-dim: #A09E99;
+  --color-accent-glow: rgba(255, 255, 255, 0.10);
+  --color-accent-soft: rgba(255, 255, 255, 0.08);
+  --gradient-accent: linear-gradient(135deg, #FFFFFF, #FFFFFF);
+  --gradient-accent-h: linear-gradient(90deg, #FFFFFF, #FFFFFF);
+  --theme-tint: #FFFFFF;
+  --theme-tint-edge: rgba(255, 255, 255, 0.20);
+}
+
 /* Hairline spine — runs across the very top of the viewport */
 .theme-presence::before,
 .theme-growth::before,
@@ -4846,17 +5031,30 @@ p { margin: 0 0 var(--space-2); }
   mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 82%, transparent 100%);
 }
 
-/* Operations — technical dot mesh */
+/* Operations — technical grid mesh (vertical + horizontal) + violet glow */
 .theme-operations .page-header::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(var(--accent-rgb), 0.24) 1px, transparent 1.4px);
-  background-size: 28px 28px;
-  opacity: 0.55;
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 71px,
+      rgba(var(--accent-rgb), 0.11) 71px,
+      rgba(var(--accent-rgb), 0.11) 72px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0,
+      transparent 71px,
+      rgba(var(--accent-rgb), 0.09) 71px,
+      rgba(var(--accent-rgb), 0.09) 72px
+    ),
+    radial-gradient(ellipse at 80% 35%, rgba(var(--accent-rgb), 0.15) 0%, transparent 55%);
   pointer-events: none;
-  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
-  mask-image: linear-gradient(180deg, transparent 0%, #000 25%, #000 75%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 82%, transparent 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 22%, #000 82%, transparent 100%);
 }
 
 /* Pillar identifier badge — floating top-right in page-header */

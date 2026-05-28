@@ -3,6 +3,40 @@
    ========================================================= */
 
 (() => {
+  // Smooth scroll (Lenis) — weighted glide with a touch of momentum, the way
+  // high-end editorial sites feel. Lenis drives the *real* native scroll
+  // position, so the sticky nav, IntersectionObserver reveals and stat counters
+  // below keep working untouched. Bails for reduced-motion and if the lib is
+  // missing, leaving the CSS native scroll as the graceful fallback.
+  let lenis = null;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (window.Lenis && !prefersReducedMotion) {
+    lenis = new Lenis({
+      lerp: 0.09,            // weight: position eases toward target each frame
+      wheelMultiplier: 1,
+      smoothWheel: true,     // touch left native — mobile momentum already feels right
+    });
+
+    const raf = (time) => {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    };
+    requestAnimationFrame(raf);
+
+    // In-page anchor links glide instead of snapping; bare "#" placeholders and
+    // links to missing targets fall through to default behaviour.
+    document.addEventListener('click', (e) => {
+      const link = e.target.closest('a[href^="#"]');
+      if (!link) return;
+      const hash = link.getAttribute('href');
+      if (!hash || hash === '#') return;
+      const target = document.querySelector(hash);
+      if (!target) return;
+      e.preventDefault();
+      lenis.scrollTo(target, { offset: -80 });
+    });
+  }
+
   // Sticky nav background on scroll
   const nav = document.querySelector('.nav');
   if (nav) {
@@ -74,10 +108,34 @@
     journeys.forEach(j => j.querySelectorAll('.journey__step').forEach(s => s.classList.add('active')));
   }
 
-  // FAQ accordion
+  // FAQ accordion — spring-eased, measured-height animation
   document.querySelectorAll('.faq__q').forEach(btn => {
     btn.addEventListener('click', () => {
-      btn.closest('.faq__item').classList.toggle('open');
+      const item   = btn.closest('.faq__item');
+      const answer = item.querySelector('.faq__a');
+      const isOpen = item.classList.contains('open');
+
+      if (isOpen) {
+        // Collapse: pin at current rendered height, then animate to 0
+        answer.style.height = answer.scrollHeight + 'px';
+        answer.getBoundingClientRect(); // force reflow
+        answer.style.height = '0';
+        item.classList.remove('open');
+      } else {
+        // Expand: measure target height, animate from 0 to it
+        item.classList.add('open');
+        const targetH = answer.scrollHeight;
+        answer.style.height = '0';
+        answer.getBoundingClientRect(); // force reflow
+        answer.style.height = targetH + 'px';
+        // Release to 'auto' once done so the panel reflows on resize
+        answer.addEventListener('transitionend', function release(e) {
+          if (e.propertyName === 'height' && item.classList.contains('open')) {
+            answer.style.height = 'auto';
+          }
+          answer.removeEventListener('transitionend', release);
+        });
+      }
     });
   });
 
@@ -211,6 +269,7 @@
       navToggle.setAttribute('aria-label', labelClose);
       menu.classList.add('is-open');
       menu.setAttribute('aria-hidden', 'false');
+      if (lenis) lenis.stop();
     };
     const close = () => {
       document.body.classList.remove('menu-open');
@@ -219,6 +278,7 @@
       navToggle.setAttribute('aria-label', labelOpen);
       menu.classList.remove('is-open');
       menu.setAttribute('aria-hidden', 'true');
+      if (lenis) lenis.start();
     };
 
     navToggle.addEventListener('click', () => {
