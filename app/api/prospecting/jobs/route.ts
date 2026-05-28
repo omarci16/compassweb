@@ -81,10 +81,18 @@ export async function POST(req: Request) {
   // Trigger the scrape via Inngest. If Inngest isn't configured, the job
   // stays queued — surfaces clearly in the UI as "needs configuration".
   if (process.env.INNGEST_EVENT_KEY) {
-    void inngest.send({
-      name: "prospecting/run-scrape",
-      data: { job_id: data.id },
-    });
+    try {
+      await inngest.send({
+        name: "prospecting/run-scrape",
+        data: { job_id: data.id },
+      });
+    } catch (err) {
+      console.error("failed to send prospecting/run-scrape event", err);
+      return NextResponse.json(
+        { error: "Job created but failed to start scrape — retry" },
+        { status: 502 },
+      );
+    }
   }
 
   return NextResponse.json({ ok: true, job_id: data.id });
