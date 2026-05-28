@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=3" />
+<link rel="stylesheet" href="styles.css?v=8" />
 </head>
 <body>
 
@@ -48,6 +48,10 @@
   </div>
 </header>
 
+<!-- ===== Hero + dashboard freeze; problem sheet rises over (stacked reveal) ===== -->
+<div class="hero-reveal">
+<div class="hero-stack"><div class="hero-stack__inner">
+
 <!-- ===== Hero ===== -->
 <section class="hero">
   <div class="hero__bg"></div>
@@ -61,7 +65,7 @@
   <div class="container hero__inner">
     <span class="badge badge--dot hero__badge reveal"><span>AI infrastruktúra partner</span></span>
     <h1 class="hero-title hero__title reveal" data-delay="80">A vállalkozásod működhet<br/><span class="hero__rotating-line"><span class="word-rotator" data-rotator aria-live="polite"><span class="word-rotator__word is-active">okosabban</span><span class="word-rotator__word">hatékonyabban</span><span class="word-rotator__word">gyorsabban</span><span class="word-rotator__word">pontosabban</span><span class="word-rotator__word">eredményesebben</span><span class="word-rotator__word">stabilabban</span></span> is.</span></h1>
-    <p class="hero__sub reveal" data-delay="160">AI-alapú digitális rendszereket építünk a jövő sikeres vállalkozásainak. Weboldalak, amelyek konvertálnak. Marketing, amely magától fut. Folyamatok, amelyek éjjel sem állnak meg.</p>
+    <p class="hero__sub reveal" data-delay="160">AI-alapú digitális rendszereket építünk a jövő sikeres vállalkozásainak. Weboldalak, amelyek eladnak. Marketing, amely magától fut. Folyamatok, amelyek éjjel sem állnak meg.</p>
     <div class="hero__ctas reveal" data-delay="240">
       <a href="services-presence.html" class="btn btn--primary">Nézze meg, mit építünk <span class="arrow">→</span></a>
       <a href="contact.html" class="btn btn--secondary">Foglaljon stratégiai konzultációt <span class="arrow">→</span></a>
@@ -162,31 +166,39 @@
     </div>
   </div>
 </section>
-<!-- ===== Problem ===== -->
-<section class="section section--light">
-  <div class="container">
-    <div class="section__head reveal">
-      <span class="eyebrow">/ Az őszinte rész</span>
-      <h2>Három csendes módja annak, ahogy egy vállalkozás hetente pénzt és időt veszít.
-    </div>
-    <div class="grid grid--3">
-      <div class="problem-card reveal">
-        <span class="eyebrow">Probléma / 01</span>
-        <h3>Olyan weboldalért fizet, amit szinte senki sem látogat.</h3>
-        <p>Kinézetre rendben van. Lassan tölt be. Hónapok óta nem hozott egyetlen valódi érdeklődőt sem — sőt, lehet, hogy a Google-ban is hátrébb sorolja Önt.</p>
-      </div>
-      <div class="problem-card reveal" data-delay="80">
-        <span class="eyebrow">Probléma / 02</span>
-        <h3>Ismétlődő feladatok, amelyek órákat vesznek el a napjából.</h3>
-        <p>Árajánlat-utánkövetés. Számlák átmásolása. Adatrögzítés. A munka, ami megtölti a naptárt, de semmit nem visz előre.</p>
-      </div>
-      <div class="problem-card reveal" data-delay="160">
-        <span class="eyebrow">Probléma / 03</span>
-        <h3>Éjjel elveszíti az érdeklődőket, mert senki sem válaszol.</h3>
-        <p>A pénteken este érkező üzenetekre hétfőn reggel válaszol. Addigra a vendég már a versenytársnál foglalt időpontot.</p>
-      </div>
-    </div>
+</div></div><!-- /.hero-stack__inner /.hero-stack -->
 
+<!-- ===== Problem (rises over the frozen hero as a sheet) ===== -->
+<section class="section section--light problem-pin">
+  <div class="problem-pin__track">
+    <div class="problem-pin__stage">
+      <div class="container">
+        <div class="problem-pin__head reveal">
+          <span class="eyebrow">/ Az őszinte rész</span>
+          <h2>Három csendes módja annak, ahogy egy vállalkozás hetente pénzt és időt veszít.</h2>
+        </div>
+        <div class="problem-pin__cards">
+          <article class="problem-card problem-card--pin reveal" data-pin-card>
+            <span class="eyebrow">Probléma / 01</span>
+            <h3>Olyan weboldalért fizet, amit szinte senki sem látogat.</h3>
+            <p>Kinézetre rendben van. Lassan tölt be. Hónapok óta nem hozott egyetlen valódi érdeklődőt sem — sőt, lehet, hogy a Google-ban is hátrébb sorolja Önt.</p>
+          </article>
+          <article class="problem-card problem-card--pin reveal" data-pin-card>
+            <span class="eyebrow">Probléma / 02</span>
+            <h3>Ismétlődő feladatok, amelyek órákat vesznek el a napjából.</h3>
+            <p>Árajánlat-utánkövetés. Számlák átmásolása. Adatrögzítés. A munka, ami megtölti a naptárt, de semmit nem visz előre.</p>
+          </article>
+          <article class="problem-card problem-card--pin reveal" data-pin-card>
+            <span class="eyebrow">Probléma / 03</span>
+            <h3>Éjjel elveszíti az érdeklődőket, mert senki sem válaszol.</h3>
+            <p>A pénteken este érkező üzenetekre hétfőn reggel válaszol. Addigra a vendég már a versenytársnál foglalt időpontot.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container problem-pin__after">
     <div class="approach-method approach-method--merged">
       <div class="approach-method__visual reveal">
         <div class="method-frame">
@@ -249,6 +261,7 @@
     </div>
   </div>
 </section>
+</div><!-- /.hero-reveal -->
 
 <!-- ===== Pillars ===== -->
 <section class="section">
@@ -699,6 +712,6 @@
 </footer>
 
 <script src="lenis.min.js"></script>
-<script src="script.js?v=3"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>

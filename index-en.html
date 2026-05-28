@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=3" />
+<link rel="stylesheet" href="styles.css?v=8" />
 </head>
 <body>
 
@@ -47,6 +47,10 @@
     </div>
   </div>
 </header>
+
+<!-- ===== Hero + dashboard freeze; problem sheet rises over (stacked reveal) ===== -->
+<div class="hero-reveal">
+<div class="hero-stack"><div class="hero-stack__inner">
 
 <!-- ===== Hero ===== -->
 <section class="hero">
@@ -162,31 +166,39 @@
     </div>
   </div>
 </section>
-<!-- ===== Problem ===== -->
-<section class="section section--light">
-  <div class="container">
-    <div class="section__head reveal">
-      <span class="eyebrow">/ The honest part</span>
-      <h2>Three quiet ways small businesses leak money every week.</h2>
-    </div>
-    <div class="grid grid--3">
-      <div class="problem-card reveal">
-        <span class="eyebrow">Problem / 01</span>
-        <h3>You're paying for a website that nobody visits.</h3>
-        <p>It looks fine. It loads slowly. It hasn't brought you a single qualified lead in months — and it might be actively hurting you in search.</p>
-      </div>
-      <div class="problem-card reveal" data-delay="80">
-        <span class="eyebrow">Problem / 02</span>
-        <h3>Your team handles tasks a 8,000 Ft / month system could automate.</h3>
-        <p>Quote follow-ups. Invoice copying. Data entry. The work that fills the calendar but moves nothing forward.</p>
-      </div>
-      <div class="problem-card reveal" data-delay="160">
-        <span class="eyebrow">Problem / 03</span>
-        <h3>You lose leads at night because nobody's there to respond.</h3>
-        <p>Friday evening forms get answered Monday morning. By then they've already booked your competitor.</p>
-      </div>
-    </div>
+</div></div><!-- /.hero-stack__inner /.hero-stack -->
 
+<!-- ===== Problem (rises over the frozen hero as a sheet) ===== -->
+<section class="section section--light problem-pin">
+  <div class="problem-pin__track">
+    <div class="problem-pin__stage">
+      <div class="container">
+        <div class="problem-pin__head reveal">
+          <span class="eyebrow">/ The honest part</span>
+          <h2>Three quiet ways small businesses leak money every week.</h2>
+        </div>
+        <div class="problem-pin__cards">
+          <article class="problem-card problem-card--pin reveal" data-pin-card>
+            <span class="eyebrow">Problem / 01</span>
+            <h3>You're paying for a website that nobody visits.</h3>
+            <p>It looks fine. It loads slowly. It hasn't brought you a single qualified lead in months — and it might be actively hurting you in search.</p>
+          </article>
+          <article class="problem-card problem-card--pin reveal" data-pin-card>
+            <span class="eyebrow">Problem / 02</span>
+            <h3>Your team handles tasks a 8,000 Ft / month system could automate.</h3>
+            <p>Quote follow-ups. Invoice copying. Data entry. The work that fills the calendar but moves nothing forward.</p>
+          </article>
+          <article class="problem-card problem-card--pin reveal" data-pin-card>
+            <span class="eyebrow">Problem / 03</span>
+            <h3>You lose leads at night because nobody's there to respond.</h3>
+            <p>Friday evening forms get answered Monday morning. By then they've already booked your competitor.</p>
+          </article>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container problem-pin__after">
     <div class="approach-method approach-method--merged">
       <div class="approach-method__visual reveal">
         <div class="method-frame">
@@ -249,6 +261,7 @@
     </div>
   </div>
 </section>
+</div><!-- /.hero-reveal -->
 
 <!-- ===== Pillars ===== -->
 <section class="section">
@@ -700,6 +713,6 @@
 </footer>
 
 <script src="lenis.min.js"></script>
-<script src="script.js?v=3"></script>
+<script src="script.js?v=8"></script>
 </body>
 </html>

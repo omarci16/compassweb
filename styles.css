@@ -4898,6 +4898,148 @@ p { margin: 0 0 var(--space-2); }
 }
 
 /* =========================================================
+   Problem — pinned scroll sequence (homepage "honest part")
+   The section pins and takes over the screen; the three cards
+   fly in from the right and land as a row of three, then the pin
+   releases and the solutions below rise. JS sets each card's
+   transform/opacity from scroll progress and drives the rail.
+   Everything is gated behind .is-pin-active, which JS only adds
+   on desktop with motion allowed — so mobile, reduced-motion and
+   no-JS all keep the plain stacked layout below.
+   ========================================================= */
+.problem-pin { position: relative; }
+
+.problem-pin__head {
+  max-width: 760px;
+  margin-bottom: clamp(28px, 5vw, 48px);
+}
+
+.problem-pin__cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 2vw, 28px);
+}
+@media (max-width: 900px) {
+  .problem-pin__cards { grid-template-columns: 1fr; }
+}
+
+.problem-card--pin { position: relative; }
+
+@media (min-width: 961px) {
+  .problem-pin.is-pin-active { padding-top: 0; padding-bottom: 0; }
+
+  .problem-pin.is-pin-active .problem-pin__track {
+    position: relative;
+    /* scroll length of the pin (tunable): 100vh stage + 160vh of travel */
+    height: var(--pin-track, 260vh);
+  }
+  .problem-pin.is-pin-active .problem-pin__stage {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding-top: 64px;     /* clear the fixed nav */
+    overflow: hidden;      /* clip the cards while they fly in from the right */
+  }
+  .problem-pin.is-pin-active .problem-pin__stage > .container { width: 100%; }
+
+  .problem-pin.is-pin-active .problem-pin__cards {
+    display: flex;
+    flex-wrap: nowrap;
+    width: max-content;       /* row wider than the viewport → real horizontal travel */
+    gap: clamp(24px, 2.4vw, 40px);
+    will-change: transform;   /* JS slides the whole row left (conveyor) */
+  }
+  .problem-pin.is-pin-active .problem-card--pin {
+    flex: 0 0 auto;
+    width: clamp(440px, 44vw, 640px);   /* large landscape cards */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    aspect-ratio: 3 / 2;          /* landscape — wider than tall */
+    padding: clamp(30px, 2.6vw, 48px);
+    border-radius: 16px;
+    background: linear-gradient(165deg, rgba(var(--accent-rgb), 0.05), rgba(255, 255, 255, 0.012));
+  }
+  .problem-pin.is-pin-active .problem-card--pin .eyebrow { margin-bottom: 16px; }
+  .problem-pin.is-pin-active .problem-card--pin h3 {
+    font-size: clamp(24px, 1.9vw, 32px);
+    line-height: 1.18;
+    margin-bottom: 14px;
+  }
+  .problem-pin.is-pin-active .problem-card--pin p { font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; }
+  .problem-pin.is-pin-active .problem-card--pin:hover {
+    background: linear-gradient(165deg, rgba(var(--accent-rgb), 0.08), rgba(255, 255, 255, 0.02));
+    border-color: rgba(var(--accent-rgb), 0.30);
+  }
+
+  .problem-pin.is-pin-active .problem-pin__after {
+    padding-top: clamp(24px, 3vw, 52px);
+    padding-bottom: clamp(96px, 11vw, 168px);
+  }
+  .problem-pin.is-pin-active .problem-pin__after .approach-method--merged { margin-top: 0; }
+}
+
+/* =========================================================
+   Stacked reveal — the hero + dashboard freeze as one backdrop
+   and the problem section rises over them like a sheet, the frozen
+   hero gently receding (scale + dim) via the --cover custom property
+   that JS updates as the sheet covers the viewport. .is-stacking is
+   added by JS on desktop + motion only; mobile / reduced-motion /
+   no-JS keep plain stacked scrolling (the wrappers stay inert divs).
+   ========================================================= */
+.hero-reveal { position: relative; }
+
+@media (min-width: 961px) {
+  /* Contain the frozen hero + sheet in their own stacking context so neither can
+     paint over the sections that follow (the Pillars section etc.). */
+  .hero-reveal.is-stacking { isolation: isolate; }
+
+  .hero-reveal.is-stacking .hero-stack {
+    position: sticky;
+    top: 0;                /* JS sets a negative top to bottom-pin the tall stack */
+    z-index: 1;
+  }
+  .hero-reveal.is-stacking .hero-stack__inner {
+    position: relative;
+    transform-origin: 50% 40%;
+    will-change: transform;
+    transform: scale(calc(1 - 0.045 * var(--cover, 0)))
+               translateY(calc(-1.6% * var(--cover, 0)));
+  }
+  .hero-reveal.is-stacking .hero-stack__inner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    pointer-events: none;
+    background: #06060B;
+    opacity: calc(0.45 * var(--cover, 0));
+  }
+
+  /* The problem section is the rising sheet — soft shadow only at the TOP seam
+     (cast onto the frozen hero above), never onto the section below. */
+  .hero-reveal.is-stacking .problem-pin {
+    position: relative;
+    z-index: 2;
+    border-top-left-radius: clamp(20px, 2vw, 32px);
+    border-top-right-radius: clamp(20px, 2vw, 32px);
+  }
+  .hero-reveal.is-stacking .problem-pin::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 64px;
+    pointer-events: none;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.42), transparent);
+  }
+}
+
+/* =========================================================
    Per-pillar themes — services-presence / -growth / -operations
    Each theme overrides the full accent token set + --accent-rgb,
    so every gradient / glow / button / accent on the page tints
