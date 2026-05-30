@@ -338,17 +338,13 @@ p { margin: 0 0 var(--space-2); }
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: 17px;
-  letter-spacing: 0;
+  line-height: 0;
 }
 
-.logo__mark {
-  width: 22px;
-  height: 22px;
-  color: var(--color-accent);
+.logo__img {
+  height: 34px;
+  width: auto;
+  display: block;
 }
 
 .nav__links {
@@ -434,7 +430,7 @@ p { margin: 0 0 var(--space-2); }
 }
 
 @media (max-width: 520px) {
-  .logo { font-size: 15px; }
+  .logo__img { height: 30px; }
   .lang-switch {
     min-height: 34px;
     padding: 0;
@@ -462,12 +458,51 @@ p { margin: 0 0 var(--space-2); }
   inset: 0 0 calc(-1 * clamp(700px, 76vw, 980px));
   pointer-events: none;
   background:
-    radial-gradient(70% 34% at 50% -4%, rgba(var(--accent-rgb), 0.36) 0%, transparent 60%),
-    radial-gradient(36% 24% at 88% 16%, rgba(var(--accent-rgb), 0.22) 0%, transparent 68%),
-    radial-gradient(46% 30% at 8% 48%, rgba(var(--accent-rgb), 0.06) 0%, transparent 72%),
-    radial-gradient(54% 30% at 50% 74%, rgba(var(--accent-rgb), 0.24) 0%, transparent 66%),
+    radial-gradient(70% 34% at 50% -4%, rgba(var(--accent-rgb), 0.20) 0%, transparent 60%),
+    radial-gradient(36% 24% at 88% 16%, rgba(var(--accent-rgb), 0.11) 0%, transparent 68%),
+    radial-gradient(46% 30% at 8% 48%, rgba(var(--accent-rgb), 0.04) 0%, transparent 72%),
+    radial-gradient(54% 30% at 50% 74%, rgba(var(--accent-rgb), 0.13) 0%, transparent 66%),
     linear-gradient(180deg, transparent 0%, rgba(10, 10, 10, 0.08) 58%, rgba(10, 10, 10, 0.78) 100%);
   z-index: 0;
+}
+
+/* Animated focal glows — tight anchored spots like the blog hero, but drifting */
+.hero__bg::before,
+.hero__bg::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.hero__bg::before {
+  width: 38%;
+  height: 38%;
+  top: 4%;
+  left: 18%;
+  background: rgba(var(--accent-rgb), 0.30);
+  animation: heroOrb1 12s ease-in-out infinite alternate;
+}
+.hero__bg::after {
+  width: 24%;
+  height: 24%;
+  top: 8%;
+  right: 14%;
+  background: rgba(var(--accent-rgb), 0.20);
+  animation: heroOrb2 16s ease-in-out infinite alternate;
+}
+@keyframes heroOrb1 {
+  0%   { transform: translate(0,    0)    scale(1);    opacity: 0.55; }
+  30%  { transform: translate(-10%, 14%)  scale(1.14); opacity: 0.95; }
+  65%  { transform: translate(12%,  6%)   scale(0.88); opacity: 0.70; }
+  100% { transform: translate(6%,  -12%)  scale(1.10); opacity: 0.60; }
+}
+@keyframes heroOrb2 {
+  0%   { transform: translate(0,   0)    scale(1);    opacity: 0.45; }
+  35%  { transform: translate(14%, 10%)  scale(1.18); opacity: 0.85; }
+  70%  { transform: translate(-8%, 4%)   scale(0.86); opacity: 0.55; }
+  100% { transform: translate(8%, -10%)  scale(1.12); opacity: 0.70; }
 }
 
 .hero__grid {
@@ -4948,28 +4983,29 @@ p { margin: 0 0 var(--space-2); }
   .problem-pin.is-pin-active .problem-pin__cards {
     display: flex;
     flex-wrap: nowrap;
-    width: max-content;       /* row wider than the viewport → real horizontal travel */
-    gap: clamp(24px, 2.4vw, 40px);
-    will-change: transform;   /* JS slides the whole row left (conveyor) */
+    width: max-content;
+    gap: clamp(20px, 2vw, 32px);
+    will-change: transform;
+    align-items: stretch;
   }
   .problem-pin.is-pin-active .problem-card--pin {
     flex: 0 0 auto;
-    width: clamp(440px, 44vw, 640px);   /* large landscape cards */
+    width: clamp(260px, 26vw, 360px);   /* portrait — all 3 fit in viewport */
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    aspect-ratio: 3 / 2;          /* landscape — wider than tall */
-    padding: clamp(30px, 2.6vw, 48px);
+    justify-content: flex-start;
+    min-height: clamp(300px, 38vh, 440px);
+    padding: clamp(28px, 2.4vw, 40px);
     border-radius: 16px;
     background: linear-gradient(165deg, rgba(var(--accent-rgb), 0.05), rgba(255, 255, 255, 0.012));
   }
   .problem-pin.is-pin-active .problem-card--pin .eyebrow { margin-bottom: 16px; }
   .problem-pin.is-pin-active .problem-card--pin h3 {
-    font-size: clamp(24px, 1.9vw, 32px);
-    line-height: 1.18;
+    font-size: clamp(20px, 1.6vw, 26px);
+    line-height: 1.22;
     margin-bottom: 14px;
   }
-  .problem-pin.is-pin-active .problem-card--pin p { font-size: clamp(15px, 1.1vw, 17px); line-height: 1.6; }
+  .problem-pin.is-pin-active .problem-card--pin p { font-size: clamp(14px, 1vw, 16px); line-height: 1.65; }
   .problem-pin.is-pin-active .problem-card--pin:hover {
     background: linear-gradient(165deg, rgba(var(--accent-rgb), 0.08), rgba(255, 255, 255, 0.02));
     border-color: rgba(var(--accent-rgb), 0.30);
@@ -5648,8 +5684,7 @@ body.menu-open {
   }
 }
 @media (max-width: 380px) {
-  .logo { font-size: 14px; gap: 8px; }
-  .logo__mark { width: 20px; height: 20px; }
+  .logo__img { height: 28px; }
 }
 
 /* Hero — guard against overflow with long HU words, stack CTAs */
