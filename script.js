@@ -37,14 +37,36 @@
     });
   }
 
-  // Sticky nav background on scroll
+  // Sticky nav: background on scroll + hide-on-down / show-on-up
   const nav = document.querySelector('.nav');
   if (nav) {
+    let lastY = window.scrollY;
+    let ticking = false;
+
     const onScroll = () => {
-      if (window.scrollY > 12) nav.classList.add('scrolled');
-      else nav.classList.remove('scrolled');
+      const y = window.scrollY;
+
+      // Frosted background once past the top
+      nav.classList.toggle('scrolled', y > 12);
+
+      // Hide/show — only engage after scrolling 100px; never hide when mobile menu is open
+      if (y > 100 && !document.body.classList.contains('menu-open')) {
+        if (y > lastY + 8) {
+          nav.classList.add('nav--hidden');
+        } else if (y < lastY - 4) {
+          nav.classList.remove('nav--hidden');
+        }
+      } else {
+        nav.classList.remove('nav--hidden');
+      }
+
+      lastY = y;
+      ticking = false;
     };
-    document.addEventListener('scroll', onScroll, { passive: true });
+
+    document.addEventListener('scroll', () => {
+      if (!ticking) { requestAnimationFrame(onScroll); ticking = true; }
+    }, { passive: true });
     onScroll();
   }
 
@@ -453,89 +475,6 @@
     window.addEventListener('resize', () => {
       clearTimeout(rt);
       rt = setTimeout(() => { if (wrap.classList.contains('is-stacking')) layout(); }, 150);
-    }, { passive: true });
-    if (pinDesktop.addEventListener) pinDesktop.addEventListener('change', setup);
-    else if (pinDesktop.addListener) pinDesktop.addListener(setup);
-  });
-
-  document.querySelectorAll('.problem-pin').forEach((section) => {
-    const track = section.querySelector('.problem-pin__track');
-    const row = section.querySelector('.problem-pin__cards');
-    if (!track || !row) return;
-
-    const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
-
-    let active = false;
-    let raf = 0;
-    let startX = 0;   // row offset at progress 0 — cards entering from the right
-    let endX = 0;     // row offset at progress 1 — card 3 aligned, 1–2 swept left
-
-    // Horizontal conveyor: the whole row slides left as you scroll down. Because
-    // the row is wider than the viewport, the first cards travel off the left
-    // edge while the last card lands flush against the container's right edge.
-    const measure = () => {
-      const vw = window.innerWidth;
-      const containerW = Math.min(vw, 1280);
-      const pad = 24;
-      const contentLeft = (vw - containerW) / 2 + pad;
-      const contentW = containerW - pad * 2;
-      const prev = row.style.transform;
-      row.style.transform = 'none';
-      const rowW = row.getBoundingClientRect().width;
-      row.style.transform = prev;
-      startX = vw - contentLeft - 140;       // first card peeks in from the right
-      endX = Math.min(0, contentW - rowW);   // last card flush to the content right edge
-    };
-
-    const progress = () => {
-      const scrollable = track.offsetHeight - window.innerHeight;
-      if (scrollable <= 0) return 0;
-      return clamp01(-track.getBoundingClientRect().top / scrollable);
-    };
-
-    const apply = (p) => {
-      const x = startX + p * (endX - startX);
-      row.style.transform = `translate3d(${x.toFixed(1)}px, 0, 0)`;
-    };
-
-    const tick = () => {
-      apply(progress());
-      raf = active ? requestAnimationFrame(tick) : 0;
-    };
-
-    // Only run the loop while the section is in/near the viewport.
-    const io = new IntersectionObserver((entries) => {
-      const visible = entries[0].isIntersecting;
-      if (visible && pinDesktop.matches && !prefersReducedMotion) {
-        if (!active) { active = true; raf = requestAnimationFrame(tick); }
-      } else {
-        active = false;
-        if (raf) { cancelAnimationFrame(raf); raf = 0; }
-      }
-    }, { rootMargin: '20% 0px 20% 0px' });
-
-    const setup = () => {
-      if (pinDesktop.matches && !prefersReducedMotion) {
-        section.classList.add('is-pin-active');
-        measure();
-        apply(progress());          // place the row before the first frame (no flash)
-        io.observe(section);
-      } else {
-        io.disconnect();
-        active = false;
-        if (raf) { cancelAnimationFrame(raf); raf = 0; }
-        section.classList.remove('is-pin-active');
-        row.style.transform = '';
-      }
-    };
-
-    setup();
-    let rt;
-    window.addEventListener('resize', () => {
-      clearTimeout(rt);
-      rt = setTimeout(() => {
-        if (section.classList.contains('is-pin-active')) { measure(); apply(progress()); }
-      }, 150);
     }, { passive: true });
     if (pinDesktop.addEventListener) pinDesktop.addEventListener('change', setup);
     else if (pinDesktop.addListener) pinDesktop.addListener(setup);
