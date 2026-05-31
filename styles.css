@@ -663,10 +663,10 @@ p { margin: 0 0 var(--space-2); }
 .hero__rotating-line { white-space: nowrap; }
 
 .hero__sub {
-  font-size: clamp(17px, 1.52vw, 20.9px);
+  font-size: clamp(16.2px, 1.44vw, 19.9px);
   line-height: 1.55;
   font-weight: 300;
-  color: var(--color-text-secondary);
+  color: var(--color-text-primary);
   max-width: 640px;
   margin-bottom: var(--space-5);
 }
@@ -4992,6 +4992,32 @@ p { margin: 0 0 var(--space-2); }
   color: #F0EDE8;
 }
 
+/* ---- Approach / Compass method block on the white section ---- */
+/* Copy column — dark text on white */
+.problem-pin .approach-method__lede {
+  color: #0A0A0A;
+}
+.problem-pin .approach-method__copy p {
+  color: #52504C;
+}
+/* CTA — the default secondary button is white-on-white here; make it a dark outline */
+.problem-pin .approach-method__cta {
+  color: #0A0A0A;
+  border-color: rgba(10, 10, 10, 0.28);
+}
+.problem-pin .approach-method__cta:hover {
+  background: rgba(10, 10, 10, 0.05);
+  border-color: rgba(10, 10, 10, 0.55);
+  transform: scale(1.02);
+}
+/* Compass visual — keep it dark so the purple dial + light labels read as designed */
+.problem-pin .method-frame {
+  background:
+    radial-gradient(circle at 50% 42%, rgba(var(--accent-rgb), 0.16) 0%, transparent 55%),
+    #0A0A0A;
+  border-color: #222222;
+}
+
 .problem-pin__head {
   max-width: 760px;
   margin-bottom: clamp(28px, 5vw, 48px);
@@ -5718,6 +5744,7 @@ body.menu-open {
 /* Nav spacing on small screens — preserve breathing room on both sides */
 @media (max-width: 900px) {
   .nav__inner { gap: 14px; padding-top: 14px; padding-bottom: 14px; }
+  .logo { margin-right: 16px; }
   .nav__cta { gap: 10px; }
 }
 @media (max-width: 480px) {
@@ -5738,12 +5765,17 @@ body.menu-open {
 /* Hero — guard against overflow with long HU words, stack CTAs */
 @media (max-width: 600px) {
   .hero-stack__inner {
-    margin: 0 12px;
-  }
-  .hero-console-preview {
+    position: relative;
+    z-index: 2;
+    border-radius: 0 0 28px 28px;
     overflow: hidden;
-    border-bottom-left-radius: 20px;
-    border-bottom-right-radius: 20px;
+  }
+  /* White section tucks up behind the hero's rounded bottom corners so the
+     dark hero clearly owns the curve against the white below. */
+  .problem-pin {
+    margin-top: -28px;
+    position: relative;
+    z-index: 1;
   }
   .hero {
     padding-top: clamp(104px, 22vw, 140px);
