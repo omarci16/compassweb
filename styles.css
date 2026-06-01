@@ -6192,11 +6192,8 @@ h1, h2, h3, h4, h5,
   .footer { padding-bottom: max(28px, calc(env(safe-area-inset-bottom) + 24px)); }
 }
 
-/* Mobile nav — opaque only once scrolled past the hero, like desktop.
-   When the mobile menu is open, we paint the nav with the SAME radial
-   gradients as the mobile-menu panel, anchored in viewport units so the
-   two surfaces line up pixel-for-pixel — no hard black stripe at the top,
-   no see-through gap above or below the bar. */
+/* Mobile nav/menu — keep the floating control transparent, while the opened
+   menu overpaints past Safari's safe areas so the page never peeks through. */
 @media (max-width: 900px) {
   .nav.scrolled {
     background: transparent;
@@ -6215,7 +6212,17 @@ h1, h2, h3, h4, h5,
     -webkit-backdrop-filter: none !important;
     border-bottom-color: transparent !important;
   }
-  .mobile-menu { height: 100dvh; }
+  .mobile-menu {
+    top: -120px;
+    bottom: -120px;
+    height: auto;
+    min-height: calc(100dvh + 240px);
+    background: var(--color-bg);
+  }
+  .mobile-menu__panel {
+    padding-top: calc(96px + 120px + env(safe-area-inset-top));
+    padding-bottom: calc(28px + 120px + env(safe-area-inset-bottom));
+  }
 }
 
 /* Approach methodology — mobile alignment polish.
