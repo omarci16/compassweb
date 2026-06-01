@@ -50,7 +50,8 @@
       nav.classList.toggle('scrolled', y > 12);
 
       // Hide/show — only engage after scrolling 100px; never hide when mobile menu is open
-      if (y > 100 && !document.body.classList.contains('menu-open')) {
+      const isMobileNav = window.matchMedia('(max-width: 900px)').matches;
+      if (y > 100 && !isMobileNav && !document.body.classList.contains('menu-open')) {
         if (y > lastY + 8) {
           nav.classList.add('nav--hidden');
         } else if (y < lastY - 4) {
@@ -236,8 +237,8 @@
     navToggle.setAttribute('aria-label', labelOpen);
     navToggle.setAttribute('aria-expanded', 'false');
     navToggle.innerHTML = `
-      <svg data-icon="hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
-      <svg data-icon="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M6 6l12 12M6 18L18 6"/></svg>
+      <svg data-icon="hamburger" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 16h14"/></svg>
+      <svg data-icon="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" aria-hidden="true"><path d="M7 7l10 10M7 17L17 7"/></svg>
     `;
 
     // Build the mobile menu overlay once and append to <body>.

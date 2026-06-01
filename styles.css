@@ -438,7 +438,7 @@ p { margin: 0 0 var(--space-2); }
 .nav__toggle svg { width: 20px; height: 20px; }
 
 @media (max-width: 900px) {
-  .nav__links, .nav__cta .btn { display: none; }
+  .nav__links, .nav__cta .btn, .nav__cta .lang-switch { display: none; }
   .nav__toggle { display: inline-flex; }
 }
 
@@ -463,6 +463,16 @@ p { margin: 0 0 var(--space-2); }
   position: relative;
   padding: clamp(96px, 10vw, 140px) 0 clamp(40px, 6vw, 80px);
   overflow: visible;
+}
+
+.hero__logo {
+  display: none;
+}
+
+.hero__logo-img {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 
 .hero-stack__inner {
@@ -4964,58 +4974,60 @@ p { margin: 0 0 var(--space-2); }
    ========================================================= */
 .problem-pin {
   position: relative;
-  background: #ffffff !important;
-  color: #0A0A0A;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(var(--accent-rgb), 0.12) 0%, transparent 34%),
+    linear-gradient(180deg, #050506 0%, #0A0A0A 48%, #060606 100%) !important;
+  color: #F0EDE8;
 }
 .problem-pin .eyebrow,
 .problem-pin .section--light .eyebrow {
-  color: #5C5A57;
+  color: rgba(240, 237, 232, 0.58);
 }
 .problem-pin h2 {
-  color: #0A0A0A;
+  color: #F7F3EE;
 }
 .problem-pin .problem-card {
-  background: #0A0A0A;
-  border-color: #222222;
+  background: linear-gradient(165deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.012));
+  border-color: rgba(240, 237, 232, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 .problem-pin .problem-card:hover {
-  background: #111111;
-  border-color: #2E2E2E;
+  background: linear-gradient(165deg, rgba(var(--accent-rgb), 0.10), rgba(255, 255, 255, 0.02));
+  border-color: rgba(var(--accent-rgb), 0.34);
 }
 .problem-pin .problem-card .eyebrow {
-  color: #F0EDE8;
+  color: rgba(var(--accent-rgb), 0.88);
 }
 .problem-pin .problem-card h3 {
-  color: #F0EDE8;
+  color: #F7F3EE;
 }
 .problem-pin .problem-card p {
-  color: #F0EDE8;
+  color: rgba(240, 237, 232, 0.70);
 }
 
-/* ---- Approach / Compass method block on the white section ---- */
-/* Copy column — dark text on white */
+/* ---- Approach / Compass method block on the dark problem section ---- */
 .problem-pin .approach-method__lede {
-  color: #0A0A0A;
+  color: #F7F3EE;
 }
 .problem-pin .approach-method__copy p {
-  color: #52504C;
+  color: rgba(240, 237, 232, 0.68);
 }
-/* CTA — the default secondary button is white-on-white here; make it a dark outline */
 .problem-pin .approach-method__cta {
-  color: #0A0A0A;
-  border-color: rgba(10, 10, 10, 0.28);
+  color: #F7F3EE;
+  border-color: rgba(240, 237, 232, 0.20);
+  background: rgba(255, 255, 255, 0.03);
 }
 .problem-pin .approach-method__cta:hover {
-  background: rgba(10, 10, 10, 0.05);
-  border-color: rgba(10, 10, 10, 0.55);
+  background: rgba(var(--accent-rgb), 0.10);
+  border-color: rgba(var(--accent-rgb), 0.42);
   transform: scale(1.02);
 }
-/* Compass visual — keep it dark so the purple dial + light labels read as designed */
 .problem-pin .method-frame {
   background:
-    radial-gradient(circle at 50% 42%, rgba(var(--accent-rgb), 0.16) 0%, transparent 55%),
-    #0A0A0A;
-  border-color: #222222;
+    radial-gradient(circle at 50% 42%, rgba(var(--accent-rgb), 0.20) 0%, transparent 55%),
+    linear-gradient(160deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.01) 62%);
+  border-color: rgba(240, 237, 232, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .problem-pin__head {
@@ -5743,12 +5755,74 @@ body.menu-open {
 
 /* Nav spacing on small screens — preserve breathing room on both sides */
 @media (max-width: 900px) {
-  .nav__inner { gap: 14px; padding-top: 14px; padding-bottom: 14px; }
-  .logo { margin-right: 16px; }
-  .nav__cta { gap: 10px; }
+  .nav {
+    pointer-events: none;
+    background: transparent;
+    border-bottom-color: transparent;
+  }
+  .nav.scrolled {
+    background: transparent;
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  body.menu-open .nav {
+    pointer-events: auto;
+  }
+  .nav__inner {
+    justify-content: flex-end;
+    gap: 0;
+    padding-top: calc(14px + env(safe-area-inset-top));
+    padding-bottom: 14px;
+  }
+  .nav .logo { display: none; }
+  .nav__cta { gap: 12px; }
+  body.menu-open .nav__cta .lang-switch {
+    display: inline-flex;
+    pointer-events: auto;
+  }
+  .nav__toggle {
+    pointer-events: auto;
+    width: 54px;
+    height: 46px;
+    border-radius: 16px;
+    color: #0A0A0A;
+    background: rgba(247, 243, 238, 0.96);
+    border-color: rgba(10, 10, 10, 0.08);
+    box-shadow:
+      0 14px 34px rgba(0, 0, 0, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .nav__toggle:hover,
+  .nav__toggle.is-open,
+  .theme-light .nav__toggle:hover,
+  .theme-light .nav__toggle.is-open {
+    color: #0A0A0A;
+    background: #F7F3EE;
+    border-color: rgba(10, 10, 10, 0.12);
+  }
+  .nav__toggle svg {
+    width: 21px;
+    height: 21px;
+  }
+  .hero__logo {
+    position: absolute;
+    top: calc(22px + env(safe-area-inset-top));
+    left: max(22px, var(--gutter));
+    z-index: 5;
+    display: inline-flex;
+    align-items: center;
+    line-height: 0;
+  }
+  .hero__logo-img {
+    height: 32px;
+    filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.24));
+  }
 }
 @media (max-width: 480px) {
-  .nav__inner { padding-top: 12px; padding-bottom: 12px; }
+  .nav__inner { padding-top: calc(12px + env(safe-area-inset-top)); padding-bottom: 12px; }
   .nav__cta { gap: 8px; }
   .lang-switch { min-height: 36px; }
   .lang-switch__option {
@@ -5770,8 +5844,11 @@ body.menu-open {
     border-radius: 0 0 28px 28px;
     overflow: hidden;
   }
-  /* White section tucks up behind the hero's rounded bottom corners so the
-     dark hero clearly owns the curve against the white below. */
+  .hero__logo-img {
+    height: 31px;
+  }
+  /* The problem section tucks up behind the hero's rounded bottom corners so
+     the dark hero keeps a clean curved edge. */
   .problem-pin {
     margin-top: -28px;
     position: relative;
@@ -6083,7 +6160,7 @@ body.menu-open {
 
 /* Lang switch in nav on smallest screens */
 @media (max-width: 360px) {
-  .nav__cta .lang-switch { display: none; }
+  body:not(.menu-open) .nav__cta .lang-switch { display: none; }
 }
 
 /* Tap target — anchors inside footer + meta */
@@ -6122,31 +6199,21 @@ h1, h2, h3, h4, h5,
    no see-through gap above or below the bar. */
 @media (max-width: 900px) {
   .nav.scrolled {
-    background: var(--color-bg);
+    background: transparent;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    border-bottom-color: var(--color-border);
+    border-bottom-color: transparent;
   }
   .theme-light .nav.scrolled {
-    background: var(--color-bg);
-    border-bottom-color: var(--color-border);
+    background: transparent;
+    border-bottom-color: transparent;
   }
   body.menu-open .nav,
   body.menu-open .nav.scrolled {
-    background:
-      radial-gradient(62vw 38vh at 88vw 4vh, rgba(var(--accent-rgb), 0.18), transparent 64%),
-      radial-gradient(48vw 36vh at 8vw 96vh, rgba(var(--accent-rgb), 0.10), transparent 66%),
-      var(--color-bg) !important;
+    background: transparent !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border-bottom-color: transparent !important;
-  }
-  /* Extend the painted area up into the iOS safe-area (notch / status bar)
-     so there's nothing visible above the nav, and use dvh so the menu
-     follows the address bar collapse without exposing the page. */
-  body.menu-open .nav {
-    padding-top: env(safe-area-inset-top);
-    margin-top: calc(-1 * env(safe-area-inset-top));
   }
   .mobile-menu { height: 100dvh; }
 }
