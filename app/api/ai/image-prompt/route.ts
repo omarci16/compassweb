@@ -2,18 +2,22 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/data/queries";
-import { callClaude, extractJson } from "@/lib/ai/anthropic";
+import { callClaude } from "@/lib/ai/anthropic";
 import {
-  COLD_OUTREACH_SYSTEM,
-  coldOutreachUserPrompt,
-  type ColdOutreachResult,
-} from "@/lib/ai/prompts/cold-outreach";
+  IMAGE_PROMPT_SYSTEM,
+  imagePromptUserPrompt,
+} from "@/lib/ai/prompts/image-prompt";
 import type { ProspectingNiche } from "@/lib/types/app.types";
 
 const Input = z.object({
   lead_id: z.string().uuid(),
+  visual_concept: z.string().min(10),
 });
 
+/**
+ * Generates an English image-generation prompt the user pastes into
+ * ChatGPT Image Gen (or comparable). The output is plain text, ready to copy.
+ */
 export async function POST(req: Request) {
   let body: unknown;
   try {
@@ -29,24 +33,14 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const { lead_id } = parsed.data;
+  const { lead_id, visual_concept } = parsed.data;
 
   if (!isSupabaseConfigured()) {
     return NextResponse.json({
       ok: true,
       demo: true,
-      result: {
-        email_subject: "Egy gyors koncepció a vállalkozásnak",
-        email_body_html:
-          "<p>Kedves Demo!</p><p>Konfiguráld a Supabase és Anthropic kulcsokat ahhoz, hogy valódi, személyre szabott levelet generálj.</p><p>Üdvözlettel,<br/>Compass Marketing</p>",
-        email_body_text:
-          "Kedves Demo!\n\nKonfiguráld a Supabase és Anthropic kulcsokat ahhoz, hogy valódi, személyre szabott levelet generálj.\n\nÜdvözlettel,\nCompass Marketing",
-        visual_concept:
-          "Demo módban nem generálunk vizuális koncepciót. Állítsd be a kulcsokat.",
-        primary_pain_point_used: "demo",
-        personalization_hook: "demo",
-        tone_notes: "demo",
-      },
+      prompt:
+        "Demo mode — configure Supabase + Anthropic to generate a real image prompt.",
     });
   }
 
@@ -54,7 +48,7 @@ export async function POST(req: Request) {
   const { data: lead, error } = await supabase
     .from("leads")
     .select(
-      "id, company_name, contact_name, niche, gmaps_city, gmaps_category, website_url, pain_audit, enrichment_summary",
+      "id, company_name, niche, gmaps_city, gmaps_category, website_url, enrichment_summary, package_interest",
     )
     .eq("id", lead_id)
     .single();
@@ -72,25 +66,24 @@ export async function POST(req: Request) {
 
   try {
     const text = await callClaude({
-      system: COLD_OUTREACH_SYSTEM,
-      user: coldOutreachUserPrompt({
+      system: IMAGE_PROMPT_SYSTEM,
+      user: imagePromptUserPrompt({
         company_name: lead.company_name,
-        contact_name: lead.contact_name,
         niche: (lead.niche as ProspectingNiche) ?? null,
         city: lead.gmaps_city,
         category: lead.gmaps_category,
         website_url: lead.website_url,
-        pain_audit: lead.pain_audit,
         enrichment_summary: lead.enrichment_summary,
+        visual_concept,
+        package_hint: lead.package_interest,
       }),
-      maxTokens: 1400,
-      temperature: 0.55,
+      maxTokens: 700,
+      temperature: 0.6,
     });
 
-    const result = extractJson<ColdOutreachResult>(text);
-    return NextResponse.json({ ok: true, result });
+    return NextResponse.json({ ok: true, prompt: text.trim() });
   } catch (err) {
-    console.error("cold outreach drafting failed", err);
+    console.error("image-prompt generation failed", err);
     return NextResponse.json(
       { error: "AI request failed" },
       { status: 500 },

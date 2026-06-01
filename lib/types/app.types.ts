@@ -85,6 +85,7 @@ export type EmailType =
   | "invoice"
   | "staging_delivery"
   | "re_engagement"
+  | "cold_outreach"
   | "general";
 
 export type ReEngagementStatus = "active" | "paused" | "converted" | "unsubscribed";

@@ -83,7 +83,12 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
         <div className="flex flex-col items-end gap-2">
           <div className="flex items-center gap-2">
             {isColdSourced && (
-              <ColdOutreachModal leadId={lead.id} hasEmail={!!lead.email} />
+              <ColdOutreachModal
+                leadId={lead.id}
+                hasEmail={!!lead.email}
+                recipientEmail={lead.email}
+                companyName={lead.company_name}
+              />
             )}
             <ScoreLeadButton leadId={lead.id} />
             {!["won", "lost", "archived"].includes(lead.status) && (
