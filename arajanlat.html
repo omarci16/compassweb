@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Árajánlat-készítő — Compass Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=11" />
+<link rel="stylesheet" href="arajanlat.css?v=2" />
+</head>
+<body class="qb-body">
+
+<!-- ===== Password gate ===== -->
+<div class="gate" id="gate" hidden>
+  <div class="gate__card">
+    <div class="gate__brand">
+      <img src="assets/logo.png" alt="Compass Systems" class="gate__logo">
+    </div>
+    <span class="eyebrow">[ BELSŐ ESZKÖZ — ÁRAJÁNLAT ]</span>
+    <h1 class="gate__title">Árajánlat-készítő</h1>
+    <p class="text-secondary gate__lead">Ez a felület jelszóval védett. Add meg a hozzáférési jelszót a folytatáshoz.</p>
+    <form id="gateForm" class="gate__form" autocomplete="off">
+      <label class="field">
+        <span class="field__label">Jelszó</span>
+        <input type="password" id="gatePass" class="field__input" placeholder="••••••••••" autocomplete="current-password" required />
+      </label>
+      <label class="gate__remember">
+        <input type="checkbox" id="gateRemember" checked />
+        <span>Maradjak bejelentkezve ezen az eszközön</span>
+      </label>
+      <button type="submit" class="btn btn--primary gate__submit">Belépés →</button>
+      <p class="gate__error" id="gateError" hidden>Hibás jelszó. Próbáld újra.</p>
+    </form>
+    <p class="gate__foot mono">Compass Marketing Kft. · Csak belső használatra</p>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<div class="qb" id="app" hidden>
+
+  <!-- Toolbar -->
+  <header class="qb-bar">
+    <div class="qb-bar__left">
+      <a href="index.html" class="qb-bar__logo" title="Vissza a főoldalra">
+        <img src="assets/logo.png" alt="Compass Systems">
+      </a>
+      <span class="qb-bar__tag mono" id="modeTag">SZERKESZTŐ</span>
+    </div>
+    <div class="qb-bar__actions" id="barActions">
+      <button class="qb-act" data-act="new" title="Új, üres ajánlat">＋ Új</button>
+      <button class="qb-act" data-act="preview" title="Előnézet / szerkesztő váltás">⇆ Előnézet</button>
+      <button class="qb-act" data-act="copy" title="Ajánlat másolása szövegként">⧉ Szöveg</button>
+      <button class="qb-act" data-act="share" title="Megosztható link létrehozása">🔗 Megosztás</button>
+      <button class="qb-act" data-act="download" title="Letöltés önálló HTML-ként">⬇ HTML</button>
+      <button class="qb-act qb-act--primary" data-act="print" title="Nyomtatás / Mentés PDF-ként">⎙ PDF / Nyomtatás</button>
+      <button class="qb-act qb-act--ghost" data-act="lock" title="Kijelentkezés">⨯</button>
+    </div>
+  </header>
+
+  <!-- Working area -->
+  <main class="qb-main">
+    <!-- Editor -->
+    <section class="qb-editor" id="editor" aria-label="Szerkesztő"></section>
+    <!-- Live preview / document -->
+    <section class="qb-preview" id="previewPane" aria-label="Előnézet">
+      <div class="qb-preview__inner">
+        <div class="quote-doc" id="quoteDoc"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Toast -->
+<div class="qb-toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="arajanlat.js?v=1"></script>
+</body>
+</html>
