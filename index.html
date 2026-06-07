@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="hu">
 <head>
 <meta charset="UTF-8" />
@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=10" />
+<link rel="stylesheet" href="styles.css?v=11" />
 </head>
 <body>
 
@@ -51,9 +51,6 @@
 
 <!-- ===== Hero ===== -->
 <section class="hero">
-  <a href="index.html" class="hero__logo" aria-label="Compass Systems főoldal">
-    <img src="assets/logo.png" alt="Compass Systems" class="hero__logo-img">
-  </a>
   <div class="hero__bg"></div>
   <div class="hero__arcs" aria-hidden="true">
     <div class="hero__arc"></div>
@@ -352,7 +349,7 @@
 <section class="section">
   <div class="container">
     <div class="section__head reveal">
-      <span class="eyebrow">/ Valódi eredmények</span>
+      <span class="eyebrow">/ Munkáink</span>
       <h2>Friss munkáink, amiket büszkén mutatunk meg.</h2>
     </div>
 
@@ -396,22 +393,221 @@
     <div class="grid" style="gap:24px;">
       <article class="case-card reveal">
         <div class="case-card__body">
-          <span class="badge">Fogászat / 1. + 2. + 3. pillér</span>
-          <h3>The Seamless Dental Practice — a rendelő, amely zárás után is dolgozik.</h3>
-          <p>Egy budapesti fogászati rendelő minden harmadik új érdeklődőjét elveszítette, mert este 6 után senki sem tudott időpontot adni. Újraépítettük az oldalukat, kiegészítettük egy 24/7 AI-foglalási ügynökkel, és automatizáltuk az inaktív páciensek SMS-es újraaktiválását.</p>
+          <span class="badge">Fitnesz / 1. + 3. pillér</span>
+          <h3>Corpus Fitness — ahol a segítség éjjel sem alszik.</h3>
+          <p>A weboldal PageSpeed-pontszáma 60 volt. Ha egy tag éjjel nem jutott be a kapun, felhívta a tulajdonost — mobilon, éjjel kettőkor is. Az oldalt nulláról csináltuk újra, a pontszám 98 lett. A bejárathoz egy QR-kódos AI-recepcióst raktunk fel. A tulajdonos telefonja éjjel már néma.</p>
           <a class="case-card__link" href="work.html">Olvassa el az esettanulmányt <span>→</span></a>
         </div>
         <div class="case-card__visual">
-          <div class="case-card__stat">+34%</div>
-          <div class="case-card__stat-label">Foglalás-megtartás</div>
-          <div class="case-card__stat" style="font-size:28px; margin-top:24px;">18 óra / hét</div>
-          <div class="case-card__stat-label">Visszanyert idő a klinikai csapatnak</div>
+          <div class="case-card__stat" style="font-size:28px;">60 → 98</div>
+          <div class="case-card__stat-label">Google PageSpeed-pontszám</div>
+          <div class="case-card__stat" style="font-size:28px; margin-top:24px;">24 / 7</div>
+          <div class="case-card__stat-label">tagszolgálat, recepciós nélkül</div>
         </div>
       </article>
     </div>
 
     <div class="website-results__cta">
-      <a href="work.html" class="btn btn--secondary">Tovább a teljes munkáink oldalra <span class="arrow">&rarr;</span></a>
+      <a href="work.html" class="btn btn--secondary">Esettanulmányok <span class="arrow">&rarr;</span></a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ===== Testimonials ===== -->
+<section class="testimonials">
+  <div class="testimonials__head reveal">
+    <span class="eyebrow">/ Ügyfeleink mondták</span>
+    <h2>Vállalkozók, akik megcsinálták.</h2>
+  </div>
+  <div class="testimonials__rows">
+
+    <!-- Row 1 → forward -->
+    <div class="testi-row testi-row--fwd" aria-hidden="true">
+      <!-- Set 1 -->
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Volt egy weboldalam, és volt egy mobilszámom, amit minden tag ismert. Az egyik most sokkal jobban néz ki, a másikra meg éjjel már nem csörög senki. Ennyi.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#2A2218; color:#C8A96E;">KP</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Kovács Péter</div>
+            <div class="testi-card__role">Corpus Fitness · Fitnesz</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Prémium projekteket keresünk — prémium megjelenés nélkül. Utólag látom, hogy az oldalunk legtöbb ajánlatkérést visszatartotta, mielőtt egyáltalán eljutott volna hozzánk.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#22181E; color:#B89AC2;">TB</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Tóth Balázs</div>
+            <div class="testi-card__role">THYM · Építőipar</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Három hét alatt éles volt az oldal. Az első héten 4 új foglalás jött be belőle. Nem sokat kell magyarázni.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1E2A22; color:#82C29A;">HE</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Horváth Eszter</div>
+            <div class="testi-card__role">BeautyLash · Szépségipar</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Az ügyfeleim már az oldal alapján el tudnak dönteni, hogy velünk akarnak-e dolgozni. Ez korábban az első személyes találkozóig elhúzódott. Két-három hétre.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1A1E2A; color:#7A9EC8;">VD</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Varga Dániel</div>
+            <div class="testi-card__role">CabinCraft · Építőipar</div>
+          </div>
+        </div>
+      </div>
+      <!-- Set 1 duplicate for seamless loop -->
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Volt egy weboldalam, és volt egy mobilszámom, amit minden tag ismert. Az egyik most sokkal jobban néz ki, a másikra meg éjjel már nem csörög senki. Ennyi.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#2A2218; color:#C8A96E;">KP</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Kovács Péter</div>
+            <div class="testi-card__role">Corpus Fitness · Fitnesz</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Prémium projekteket keresünk — prémium megjelenés nélkül. Utólag látom, hogy az oldalunk legtöbb ajánlatkérést visszatartotta, mielőtt egyáltalán eljutott volna hozzánk.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#22181E; color:#B89AC2;">TB</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Tóth Balázs</div>
+            <div class="testi-card__role">THYM · Építőipar</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Három hét alatt éles volt az oldal. Az első héten 4 új foglalás jött be belőle. Nem sokat kell magyarázni.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1E2A22; color:#82C29A;">HE</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Horváth Eszter</div>
+            <div class="testi-card__role">BeautyLash · Szépségipar</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Az ügyfeleim már az oldal alapján el tudnak dönteni, hogy velünk akarnak-e dolgozni. Ez korábban az első személyes találkozóig elhúzódott. Két-három hétre.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1A1E2A; color:#7A9EC8;">VD</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Varga Dániel</div>
+            <div class="testi-card__role">CabinCraft · Építőipar</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Row 2 ← reverse -->
+    <div class="testi-row testi-row--rev" aria-hidden="true">
+      <!-- Set 2 -->
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Nem voltunk láthatók online. Aztán kiderült, hogy a konkurenseink jobban szerepelnek Googleon, pedig a termékünk jobb. Most mi vagyunk előrébb.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1E2218; color:#A0C07A;">NÁ</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Németh Ágnes</div>
+            <div class="testi-card__role">ForroPlast · Ipari</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">A termékünk jó volt. Az online jelenlétünk nem. Most mindkettő rendben van — és az egyik végre a másik mögé áll be.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#2A1E1A; color:#C8907A;">MK</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Molnár Krisztina</div>
+            <div class="testi-card__role">ShineFruit · Élelmiszer</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Az oldalunk most pontosan azt mondja, amit a termékünk csinál. Korábban minden demón kétszer kellett elmagyarázni. Most nem kell.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#221A2A; color:#9A7AC8;">KG</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Kiss Gábor</div>
+            <div class="testi-card__role">TeacherPass · SaaS</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Ingatlant úgy ad el az ember, hogy az ügyfél már az első kattintásra azt érzi: ez az. Az oldalunk most ezt csinálja. Korábban négy-öt e-mail után jutottunk el idáig.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1E2218; color:#A0C07A;">FR</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Farkas Réka</div>
+            <div class="testi-card__role">Báthory22 · Ingatlan</div>
+          </div>
+        </div>
+      </div>
+      <!-- Set 2 duplicate for seamless loop -->
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Nem voltunk láthatók online. Aztán kiderült, hogy a konkurenseink jobban szerepelnek Googleon, pedig a termékünk jobb. Most mi vagyunk előrébb.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1E2218; color:#A0C07A;">NÁ</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Németh Ágnes</div>
+            <div class="testi-card__role">ForroPlast · Ipari</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">A termékünk jó volt. Az online jelenlétünk nem. Most mindkettő rendben van — és az egyik végre a másik mögé áll be.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#2A1E1A; color:#C8907A;">MK</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Molnár Krisztina</div>
+            <div class="testi-card__role">ShineFruit · Élelmiszer</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Az oldalunk most pontosan azt mondja, amit a termékünk csinál. Korábban minden demón kétszer kellett elmagyarázni. Most nem kell.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#221A2A; color:#9A7AC8;">KG</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Kiss Gábor</div>
+            <div class="testi-card__role">TeacherPass · SaaS</div>
+          </div>
+        </div>
+      </div>
+      <div class="testi-card">
+        <div class="testi-card__mark">&ldquo;</div>
+        <p class="testi-card__quote">Ingatlant úgy ad el az ember, hogy az ügyfél már az első kattintásra azt érzi: ez az. Az oldalunk most ezt csinálja. Korábban négy-öt e-mail után jutottunk el idáig.</p>
+        <div class="testi-card__author">
+          <div class="testi-card__avatar" style="background:#1E2218; color:#A0C07A;">FR</div>
+          <div class="testi-card__meta">
+            <div class="testi-card__name">Farkas Réka</div>
+            <div class="testi-card__role">Báthory22 · Ingatlan</div>
+          </div>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -709,7 +905,7 @@
 </footer>
 
 <script src="lenis.min.js"></script>
-<script src="script.js?v=8"></script>
+<script src="script.js?v=9"></script>
 </body>
 </html>
 

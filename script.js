@@ -214,6 +214,23 @@
     show(0);
   }
 
+  // Pinned mobile logo — a direct body child with its own position:fixed so it
+  // is never affected by nav containment, overflow, or iOS stacking-context bugs.
+  {
+    const navLogo = document.querySelector('.nav .logo');
+    if (navLogo) {
+      const pin = document.createElement('a');
+      pin.className = 'mobile-logo-pin';
+      pin.href = navLogo.getAttribute('href') || 'index.html';
+      pin.setAttribute('aria-label', 'Compass Systems');
+      const img = document.createElement('img');
+      img.src = 'assets/logo.png';
+      img.alt = 'Compass Systems';
+      pin.appendChild(img);
+      document.body.insertBefore(pin, document.body.firstChild);
+    }
+  }
+
   // Mobile menu — JS-built overlay so we don't have to touch every HTML page.
   // Reuses the existing .nav__links, .lang-switch, and primary .btn from the nav
   // so HU/EN copy stays in sync automatically.
