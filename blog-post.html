@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Blog — Compass Systems</title>
+<meta name="description" id="metaDesc" content="" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=11" />
+<style>
+  /* Article reader — scoped to keep the shared stylesheet untouched */
+  .article { padding: clamp(40px, 7vw, 96px) 0 0; }
+  .article__head { max-width: 760px; margin: 0 auto; text-align: center; }
+  .article__back { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.06em; color: var(--color-text-secondary); display: inline-block; margin-bottom: 28px; }
+  .article__back:hover { color: var(--color-accent); }
+  .article__kicker { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-text-tertiary); }
+  .article__title { font-size: clamp(32px, 5vw, 60px); font-weight: 500; letter-spacing: -0.03em; line-height: 1.12; margin: 16px 0 18px; }
+  .article__excerpt { font-size: clamp(17px, 2vw, 21px); line-height: 1.6; color: var(--color-text-secondary); margin: 0 auto 22px; max-width: 640px; }
+  .article__meta { display: flex; gap: 14px; justify-content: center; align-items: center; flex-wrap: wrap; font-family: var(--font-mono); font-size: 12px; color: var(--color-text-tertiary); letter-spacing: 0.04em; }
+  .article__cover { max-width: 1040px; margin: clamp(36px, 6vw, 64px) auto 0; aspect-ratio: 16 / 9; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--color-border); background: var(--color-surface-2); }
+  .article__cover img { width: 100%; height: 100%; object-fit: cover; }
+
+  .prose { max-width: 720px; margin: clamp(40px, 6vw, 72px) auto 0; font-size: 18px; line-height: 1.75; color: var(--color-text-primary); }
+  .prose > *:first-child { margin-top: 0; }
+  .prose h2 { font-size: clamp(26px, 3vw, 34px); font-weight: 500; letter-spacing: -0.02em; margin: 48px 0 16px; }
+  .prose h3 { font-size: clamp(21px, 2.4vw, 26px); font-weight: 500; margin: 36px 0 12px; }
+  .prose p { margin: 0 0 22px; color: var(--color-text-secondary); }
+  .prose strong { color: var(--color-text-primary); font-weight: 600; }
+  .prose a { color: var(--color-accent); text-decoration: underline; text-underline-offset: 3px; }
+  .prose ul, .prose ol { margin: 0 0 22px; padding-left: 24px; color: var(--color-text-secondary); }
+  .prose li { margin-bottom: 10px; }
+  .prose blockquote { margin: 32px 0; padding: 8px 24px; border-left: 2px solid var(--color-accent-dim); font-style: italic; color: var(--color-text-primary); font-size: 20px; }
+  .prose img { border-radius: var(--radius-lg); margin: 28px 0; width: 100%; }
+  .prose hr { border: 0; border-top: 1px solid var(--color-divider); margin: 40px 0; }
+
+  .article__tags { max-width: 720px; margin: 40px auto 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .article__foot { max-width: 720px; margin: 48px auto 0; padding-top: 32px; border-top: 1px solid var(--color-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+
+  .article__state { text-align: center; padding: clamp(80px, 16vw, 180px) 0; color: var(--color-text-secondary); }
+  .article__state h1 { font-size: clamp(28px, 4vw, 40px); font-weight: 400; margin-bottom: 12px; color: var(--color-text-primary); }
+  .article__state .spinner { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--color-border-light); border-top-color: var(--color-accent); animation: ap-spin 0.7s linear infinite; margin: 0 auto 24px; }
+  @keyframes ap-spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ===== Nav ===== -->
+<header class="nav">
+  <div class="container nav__inner">
+    <a href="index.html" class="logo">
+      <img src="assets/logo.png" alt="Compass Systems" class="logo__img">
+    </a>
+    <nav>
+      <ul class="nav__links">
+        <li><a href="services-presence.html">Szolgáltatások</a></li>
+        <li><a href="termekeink.html">Termékeink</a></li>
+        <li><a href="work.html">Esettanulmányok</a></li>
+        <li><a href="blog.html" class="active">Blog</a></li>
+        <li><a href="process.html">Folyamat</a></li>
+        <li><a href="pricing.html">Árak</a></li>
+        <li><a href="about.html">Rólunk</a></li>
+      </ul>
+    </nav>
+    <div class="nav__cta">
+      <a href="contact.html" class="btn btn--primary">Ingyenes konzultáció</a>
+    </div>
+  </div>
+</header>
+
+<!-- ===== Article ===== -->
+<article class="section section--tight" style="padding-top:0;">
+  <div class="container">
+    <div id="post" class="article">
+      <div class="article__state">
+        <div class="spinner"></div>
+        <p>Betöltés…</p>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- ===== Final CTA ===== -->
+<section class="final-cta">
+  <div class="container final-cta__inner reveal">
+    <h2>Hagyja végre az asztalon felejtett pénzt másnak?</h2>
+    <p>Kezdjen egy ingyenes, 30 perces stratégiai konzultációval. Nincs eladás — csak egy őszinte átnézés arról, hol tudja az AI valóban előrébb mozdítani a vállalkozását.</p>
+    <div class="final-cta__ctas">
+      <a href="contact.html" class="btn btn--primary">Ingyenes stratégiai konzultáció</a>
+      <a href="blog.html" class="btn btn--secondary">Vissza a bloghoz <span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Footer ===== -->
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a href="index.html" class="logo"><img src="assets/logo.png" alt="Compass Systems" class="logo__img"></a>
+        <p>Iránytű a növekedéshez. AI növekedési partner magyar kkv-knak — Budapest.</p>
+        <div class="footer__social" aria-label="Közösségi linkek">
+          <a href="https://www.instagram.com/compassaisystems/" aria-label="Compass Systems Instagramon">Instagram</a>
+          <a href="#" aria-label="Compass Systems TikTokon">TikTok</a>
+          <a href="#" aria-label="Compass Systems Facebookon">Facebook</a>
+          <a href="#" aria-label="Compass Systems LinkedInen">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer__col">
+        <h5>Szolgáltatások</h5>
+        <ul>
+          <li><a href="services-presence.html">Presence</a></li>
+          <li><a href="services-growth.html">Growth</a></li>
+          <li><a href="services-operations.html">Operations</a></li>
+          <li><a href="termekeink.html">Termékeink</a></li>
+          <li><a href="pricing.html">Árak</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Cég</h5>
+        <ul>
+          <li><a href="work.html">Esettanulmányok</a></li>
+          <li><a href="process.html">Folyamat</a></li>
+          <li><a href="about.html">Rólunk</a></li>
+          <li><a href="contact.html">Kapcsolat</a></li>
+        </ul>
+      </div>
+      <div class="footer__col">
+        <h5>Kapcsolat</h5>
+        <ul>
+          <li><a href="mailto:info@compassmarketing.hu">info@compassmarketing.hu</a></li>
+          <li><a href="tel:+3611234567">+36 1 123 4567</a></li>
+          <li><span class="text-tertiary">Budapest, Magyarország</span></li>
+          <li><span class="text-tertiary">1 munkanapon belül válaszolunk</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Compass Systems Kft. · <a href="arajanlat.html" class="footer__quote">Árajánlat</a> · <a href="admin.html" class="footer__quote">Admin</a></span>
+      <span><a href="#">GDPR</a> · <a href="#">Adatkezelés</a> · <a href="#">Impresszum</a></span>
+    </div>
+  </div>
+</footer>
+
+<script src="lenis.min.js"></script>
+<script src="script.js?v=9"></script>
+<script src="supabase-config.js?v=1"></script>
+<script src="supabase-public.js?v=1"></script>
+<script>
+(function () {
+  var box = document.getElementById('post');
+  function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function fmtDate(d){if(!d)return'';var x=new Date(d);if((document.documentElement.lang||'hu').indexOf('en')===0)return x.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});return x.getFullYear()+'. '+['január','február','március','április','május','június','július','augusztus','szeptember','október','november','december'][x.getMonth()]+' '+x.getDate()+'.';}
+  var CATS={websites:'Weboldalak',marketing:'Marketing',operations:'Operations',seo:'SEO & GEO'};
+
+  function state(title, msg, showBack){
+    box.innerHTML='<div class="article__state"><h1>'+esc(title)+'</h1><p>'+esc(msg)+'</p>'+
+      (showBack?'<p style="margin-top:24px"><a class="btn btn--secondary" href="blog.html">← Vissza a bloghoz</a></p>':'')+'</div>';
+  }
+
+  var slug = new URLSearchParams(location.search).get('slug');
+  if (!slug) { state('Nincs megadva cikk', 'Térj vissza a blogra és válassz egy bejegyzést.', true); return; }
+
+  function renderPost(p) {
+    if (!p) { state('A cikk nem található', 'Lehet, hogy elköltözött, vagy még nem jelent meg.', true); return; }
+    document.title = p.title + ' — Compass Systems';
+    var md = document.getElementById('metaDesc'); if (md && p.excerpt) md.setAttribute('content', p.excerpt);
+    document.documentElement.lang = p.lang || 'hu';
+    var EN = (p.lang || 'hu') === 'en';
+    var blogHref = EN ? 'blog-en.html' : 'blog.html';
+    var L = EN
+      ? { back: '← Growth Compass', all: '← All articles', read: 'min read', cta: 'Free strategy call' }
+      : { back: '← Növekedési Iránytű', all: '← Minden cikk', read: 'perc olvasás', cta: 'Ingyenes stratégiai hívás' };
+    var tags   = (p.tags || []).map(function (t) { return '<span class="badge">' + esc(t) + '</span>'; }).join('');
+    var cvr    = p.cover_url ? '<div class="article__cover"><img src="' + esc(p.cover_url) + '" alt="' + esc(p.title) + '"></div>' : '';
+    box.innerHTML =
+      '<div class="article__head">' +
+        '<a class="article__back" href="' + blogHref + '">' + L.back + '</a>' +
+        '<div class="article__kicker">' + esc(CATS[p.category] || p.category || '') + '</div>' +
+        '<h1 class="article__title">' + esc(p.title) + '</h1>' +
+        (p.excerpt ? '<p class="article__excerpt">' + esc(p.excerpt) + '</p>' : '') +
+        '<div class="article__meta"><span>' + fmtDate(p.published_at || p.created_at) + '</span><span>·</span>' +
+          '<span>' + (p.read_minutes || 4) + ' ' + L.read + '</span><span>·</span>' +
+          '<span>' + esc(p.author || 'Compass Systems') + '</span></div>' +
+      '</div>' + cvr +
+      '<div class="prose">' + (p.body || '') + '</div>' +
+      (tags ? '<div class="article__tags">' + tags + '</div>' : '') +
+      '<div class="article__foot"><a class="article__back" href="' + blogHref + '">' + L.all + '</a>' +
+        '<a class="btn btn--secondary" href="contact.html">' + L.cta + ' <span class="arrow">→</span></a></div>';
+  }
+
+  /* 1. Supabase */
+  if (window.CompassDB && CompassDB.ready) {
+    CompassDB.getPost(slug).then(renderPost).catch(function () { state('Hiba történt', 'A cikk betöltése nem sikerült.', true); });
+    return;
+  }
+
+  /* 2. localStorage */
+  try {
+    var all = JSON.parse(localStorage.getItem('compass_admin_posts_v1') || '[]');
+    var post = null;
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].slug === slug && all[i].status === 'published') { post = all[i]; break; }
+    }
+    renderPost(post);
+  } catch(e) { state('Hiba történt', 'A cikk nem olvasható.', true); }
+})();
+</script>
+</body>
+</html>
