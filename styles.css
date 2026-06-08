@@ -849,9 +849,32 @@ p { margin: 0 0 var(--space-2); }
   max-width: 460px;
 }
 
+.system-preview__products-cta {
+  margin-top: var(--space-5);
+}
+
 .growth-console {
   position: relative;
   min-height: 520px;
+}
+
+.growth-console .app-mock {
+  position: absolute;
+  top: 32px;
+  left: 20px;
+  right: 20px;
+  bottom: 28px;
+  background: linear-gradient(160deg, #1A1D2A 0%, #0F1018 100%);
+}
+
+.growth-console:hover .app-mock {
+  transform: perspective(1600px) rotateY(0deg) rotateX(0deg);
+}
+
+.growth-console .product-callout {
+  right: 6px;
+  bottom: 8px;
+  z-index: 3;
 }
 
 .growth-console__window {
@@ -6776,7 +6799,9 @@ h1, h2, h3, h4, h5,
   background: #2C2E36;
   display: block;
 }
-.app-mock__bar i:nth-child(1) { background: #3a3c44; }
+.app-mock__bar i:nth-child(1) { background: #FF5F57; }
+.app-mock__bar i:nth-child(2) { background: #FEBC2E; }
+.app-mock__bar i:nth-child(3) { background: #28CA41; }
 .app-mock__url {
   margin-left: 10px;
   font-family: var(--font-mono);
