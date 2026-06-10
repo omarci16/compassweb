@@ -852,6 +852,14 @@ p { margin: 0 0 var(--space-2); }
 .system-preview__products-cta {
   margin-top: var(--space-5);
 }
+.system-preview__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+  margin-top: var(--space-5);
+}
+.system-preview__ctas .system-preview__products-cta { margin-top: 0; }
 
 .growth-console {
   position: relative;
@@ -7303,4 +7311,220 @@ h1, h2, h3, h4, h5,
   .testi-card__quote { font-size: 13.5px; }
   .testimonials__rows { gap: 14px; }
   .testi-row { gap: 14px; }
+}
+
+/* =========================================================
+   Compass Reception — product page
+   ========================================================= */
+.recep-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(56px, 8vw, 116px) 0 clamp(36px, 5vw, 64px);
+}
+.recep-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(ellipse 54% 60% at 12% 12%, rgba(126, 92, 240, 0.22) 0%, transparent 58%),
+    radial-gradient(ellipse 50% 54% at 92% 30%, rgba(232, 145, 122, 0.16) 0%, transparent 56%),
+    radial-gradient(circle at 50% 50%, rgba(var(--accent-rgb), 0.05) 0, rgba(var(--accent-rgb), 0.05) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 26px 26px;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+  mask-image: linear-gradient(180deg, #000 0%, #000 70%, transparent 100%);
+}
+.recep-hero > .container { position: relative; z-index: 2; }
+.recep-hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.06fr);
+  gap: clamp(40px, 6vw, 92px);
+  align-items: center;
+}
+.recep-hero__copy { max-width: 560px; }
+.recep-hero h1 {
+  font-size: clamp(40px, 5.4vw, 78px);
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  margin: var(--space-3) 0 var(--space-3);
+}
+.recep-hero h1 em {
+  font-style: normal;
+  background: var(--gradient-accent-h);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.recep-hero__sub {
+  font-size: clamp(16px, 1.4vw, 19px);
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+  max-width: 500px;
+}
+.recep-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: var(--space-5);
+}
+.recep-hero__channels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: var(--space-5);
+}
+.recep-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  padding: 7px 13px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.recep-chip::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+/* Layered hero stage: voice card + chat card */
+.recep-stage { position: relative; }
+.recep-stage__voice { position: relative; z-index: 2; width: 94%; }
+.recep-stage__chat {
+  position: relative;
+  z-index: 3;
+  width: 74%;
+  margin: -44px 0 0 auto;
+  box-shadow: 0 36px 90px rgba(0, 0, 0, 0.6);
+}
+.recep-stage .app-mock { transform: perspective(1600px) rotateY(-5deg) rotateX(2deg); }
+.recep-stage__chat .app-mock { transform: perspective(1600px) rotateY(-3deg) rotateX(2deg); }
+.recep-stage:hover .app-mock { transform: perspective(1600px) rotateY(0deg) rotateX(0deg); }
+
+/* Voice-call body bits (reuses .scribe + .app-mock) */
+.recep-call__caller {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 16px;
+}
+.recep-call__avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, rgba(var(--accent-rgb), 0.55), rgba(var(--accent-rgb), 0.16));
+  color: #0A0A0A;
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.recep-call__who { display: flex; flex-direction: column; gap: 2px; }
+.recep-call__who strong { font-size: 13px; font-weight: 600; color: var(--color-text-primary); }
+.recep-call__who span {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-tertiary);
+}
+
+/* Capability grid */
+.recep-caps { padding-top: 0; }
+
+/* Channel / surface cards */
+.recep-surfaces {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.recep-surface {
+  padding: 32px 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  transition: border-color 0.25s var(--ease), background 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.recep-surface:hover {
+  border-color: var(--color-border-light);
+  background: #161616;
+  transform: translateY(-3px);
+}
+.recep-surface__icon {
+  width: 44px; height: 44px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 20px;
+  background: var(--color-accent-soft);
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
+  color: var(--color-accent);
+}
+.recep-surface__icon svg { width: 21px; height: 21px; }
+.recep-surface h3 { font-size: 20px; margin-bottom: 10px; letter-spacing: -0.02em; }
+.recep-surface p { color: var(--color-text-secondary); font-size: 14.5px; line-height: 1.6; margin: 0; }
+.recep-surface__tag {
+  display: inline-block;
+  margin-top: 18px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent-dim);
+}
+
+/* Integrations strip */
+.recep-integrations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: var(--space-5);
+}
+.recep-integrations span {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background: var(--color-surface);
+}
+
+/* Who it's for */
+.recep-audience {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: var(--space-4);
+}
+.recep-audience span {
+  font-size: 14px;
+  color: var(--color-text-primary);
+  padding: 11px 18px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.02);
+  transition: border-color 0.25s var(--ease), color 0.25s var(--ease);
+}
+.recep-audience span:hover { border-color: rgba(var(--accent-rgb), 0.45); color: var(--color-accent); }
+
+@media (max-width: 960px) {
+  .recep-hero__grid { grid-template-columns: 1fr; gap: clamp(48px, 9vw, 64px); }
+  .recep-stage__voice { width: 100%; }
+  .recep-stage__chat { width: 86%; margin: -32px 0 0 auto; }
+  .recep-stage .app-mock,
+  .recep-stage__chat .app-mock { transform: none; }
+  .recep-surfaces { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .recep-stage__chat { width: 100%; margin: 16px 0 0; }
 }

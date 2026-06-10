@@ -212,6 +212,94 @@
       }
     });
     show(0);
+
+    // ----- Submit: collect the structured answers and send to Supabase -----
+    const EN = (document.documentElement.lang || 'hu').toLowerCase().indexOf('en') === 0;
+    const submitBtn = steps[steps.length - 1].querySelector('.btn--primary');
+    const picked = (step) => Array.from(step.querySelectorAll('.brief__option.selected')).map(o => o.textContent.trim());
+
+    if (submitBtn) {
+      submitBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const last = steps[steps.length - 1];
+        const val = (sel) => { const f = last.querySelector(sel); return f ? f.value.trim() : ''; };
+        const payload = {
+          name: val('input[type="text"]'),
+          company: (last.querySelectorAll('input[type="text"]')[1] || {}).value || '',
+          email: val('input[type="email"]'),
+          phone: val('input[type="tel"]'),
+          message: val('textarea'),
+          bottleneck: picked(steps[0]),
+          response_speed: (picked(steps[1])[0] || ''),
+          tools: picked(steps[2]),
+          budget: (picked(steps[3])[0] || ''),
+          lang: EN ? 'en' : 'hu',
+          source: 'contact-brief'
+        };
+        payload.company = (payload.company || '').trim();
+
+        if (!payload.email || !/.+@.+\..+/.test(payload.email)) {
+          alert(EN ? 'Please enter a valid email so we can reply.' : 'Adj meg egy érvényes e-mail-címet, hogy válaszolni tudjunk.');
+          return;
+        }
+
+        const done = (ok) => {
+          const T = EN
+            ? { h: 'Thank you — your brief is in.', p: 'We reply within 1 business day with a real plan and a real price.', b: '← Back to home' }
+            : { h: 'Köszönjük — megkaptuk a briefet.', p: 'Egy munkanapon belül jelentkezünk valódi tervvel és valódi árral.', b: '← Vissza a főoldalra' };
+          brief.innerHTML =
+            '<div style="text-align:center;padding:48px 24px;">' +
+            '<div style="width:54px;height:54px;border-radius:50%;border:1px solid var(--color-accent);display:grid;place-items:center;margin:0 auto 22px;font-size:24px;color:var(--color-accent);">✓</div>' +
+            '<h2 style="font-weight:500;margin:0 0 10px;">' + T.h + '</h2>' +
+            '<p class="text-secondary" style="max-width:420px;margin:0 auto;">' + T.p + '</p>' +
+            '<a href="index.html" class="btn btn--secondary" style="margin-top:28px;">' + T.b + '</a></div>';
+          window.scrollTo({ top: brief.getBoundingClientRect().top + window.scrollY - 120, behavior: 'smooth' });
+        };
+
+        const mailtoFallback = () => {
+          const lines = [
+            'Brief — Compass Systems', '',
+            'Név: ' + payload.name, 'Cég: ' + payload.company,
+            'E-mail: ' + payload.email, 'Telefon: ' + payload.phone, '',
+            'Szűk keresztmetszet: ' + payload.bottleneck.join(', '),
+            'Válaszidő: ' + payload.response_speed,
+            'Eszközök: ' + payload.tools.join(', '),
+            'Keret: ' + payload.budget, '', 'Üzenet:', payload.message
+          ];
+          window.location.href = 'mailto:info@compassmarketing.hu?subject=' +
+            encodeURIComponent('Brief — ' + (payload.name || payload.email)) +
+            '&body=' + encodeURIComponent(lines.join('\n'));
+        };
+
+        const label = submitBtn.innerHTML;
+        submitBtn.style.pointerEvents = 'none';
+        submitBtn.innerHTML = EN ? 'Sending…' : 'Küldés…';
+
+        /* Always save to localStorage so the admin can see it (same-device / local mode). */
+        const saveLocal = () => {
+          try {
+            const KEY = 'compass_admin_inquiries_v1';
+            const arr = JSON.parse(localStorage.getItem(KEY) || '[]');
+            arr.unshift(Object.assign({
+              id: Math.random().toString(36).slice(2,11) + '-' + Date.now(),
+              created_at: new Date().toISOString(),
+              status: 'new'
+            }, payload));
+            localStorage.setItem(KEY, JSON.stringify(arr));
+          } catch(e) {}
+        };
+
+        if (window.CompassDB && window.CompassDB.ready) {
+          window.CompassDB.submitInquiry(payload)
+            .then(() => { saveLocal(); done(true); })
+            .catch(() => { submitBtn.style.pointerEvents = ''; submitBtn.innerHTML = label; saveLocal(); mailtoFallback(); });
+        } else {
+          saveLocal();
+          mailtoFallback();
+          submitBtn.style.pointerEvents = ''; submitBtn.innerHTML = label;
+        }
+      });
+    }
   }
 
   // Pinned mobile logo — a direct body child with its own position:fixed so it
