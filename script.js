@@ -3,39 +3,7 @@
    ========================================================= */
 
 (() => {
-  // Smooth scroll (Lenis) — weighted glide with a touch of momentum, the way
-  // high-end editorial sites feel. Lenis drives the *real* native scroll
-  // position, so the sticky nav, IntersectionObserver reveals and stat counters
-  // below keep working untouched. Bails for reduced-motion and if the lib is
-  // missing, leaving the CSS native scroll as the graceful fallback.
-  let lenis = null;
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (window.Lenis && !prefersReducedMotion) {
-    lenis = new Lenis({
-      lerp: 0.09,            // weight: position eases toward target each frame
-      wheelMultiplier: 1,
-      smoothWheel: true,     // touch left native — mobile momentum already feels right
-    });
-
-    const raf = (time) => {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    };
-    requestAnimationFrame(raf);
-
-    // In-page anchor links glide instead of snapping; bare "#" placeholders and
-    // links to missing targets fall through to default behaviour.
-    document.addEventListener('click', (e) => {
-      const link = e.target.closest('a[href^="#"]');
-      if (!link) return;
-      const hash = link.getAttribute('href');
-      if (!hash || hash === '#') return;
-      const target = document.querySelector(hash);
-      if (!target) return;
-      e.preventDefault();
-      lenis.scrollTo(target, { offset: -80 });
-    });
-  }
 
   // Sticky nav: background on scroll + hide-on-down / show-on-up
   const nav = document.querySelector('.nav');
@@ -73,7 +41,7 @@
 
   // Reveal on scroll
   const reveals = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window && reveals.length) {
+  if ('IntersectionObserver' in window && reveals.length && !prefersReducedMotion) {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((e, i) => {
         if (e.isIntersecting) {
@@ -397,7 +365,6 @@
       navToggle.setAttribute('aria-label', labelClose);
       menu.classList.add('is-open');
       menu.setAttribute('aria-hidden', 'false');
-      if (lenis) lenis.stop();
     };
     const close = () => {
       document.body.classList.remove('menu-open');
@@ -406,7 +373,6 @@
       navToggle.setAttribute('aria-label', labelOpen);
       menu.classList.remove('is-open');
       menu.setAttribute('aria-hidden', 'true');
-      if (lenis) lenis.start();
     };
 
     navToggle.addEventListener('click', () => {
@@ -513,9 +479,9 @@
 
   // Problem pinned scroll — the section pins ("takes over" the screen) while the
   // three cards fly in from the right, one after another, and land as a row of
-  // three; then the pin releases and the solutions below rise. Driven by the real
-  // scroll position (Lenis-friendly) via a rAF loop that only runs while the
-  // section is near the viewport. Desktop + motion-OK only — mobile and
+  // three; then the pin releases and the solutions below rise. Driven by the
+  // real scroll position via a rAF loop that only runs while the section is
+  // near the viewport. Desktop + motion-OK only — mobile and
   // reduced-motion keep the static stacked layout (the .is-pin-active class,
   // which all the pin CSS keys off, is added only here).
   const pinDesktop = window.matchMedia('(min-width: 961px)');
