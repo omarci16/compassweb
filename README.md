@@ -9,8 +9,9 @@ client portal. Built per [`CLAUDE.md`](./CLAUDE.md).
 - Next.js 14 (App Router) + TypeScript strict
 - Tailwind CSS v3 + shadcn-style primitives + Lucide
 - Supabase (Postgres + Auth + Storage + Realtime + RLS)
-- Anthropic Claude (`claude-sonnet-4-20250514`) for all AI
+- Anthropic Claude (`claude-sonnet-5`) for all AI
 - Apify Website Content Crawler for lead enrichment
+- Google PageSpeed Insights for site verification (HTTPS / viewport / performance / screenshot)
 - Resend for outbound email
 - Inngest for background jobs
 - React Query + Zustand, dnd-kit for kanban, Tiptap for proposals, Recharts

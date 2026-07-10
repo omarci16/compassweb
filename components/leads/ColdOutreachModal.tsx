@@ -39,6 +39,10 @@ interface Props {
   recipientEmail?: string | null;
   /** Company name — used in alt text and label. */
   companyName?: string | null;
+  /** Rendered homepage screenshot — lets the sender eyeball the real site. */
+  screenshotUrl?: string | null;
+  /** ISO timestamp of the last site verification, or null if unverified. */
+  verifiedAt?: string | null;
 }
 
 interface DraftResult {
@@ -101,6 +105,8 @@ export function ColdOutreachModal({
   hasEmail,
   recipientEmail,
   companyName,
+  screenshotUrl,
+  verifiedAt,
 }: Props) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -289,10 +295,37 @@ export function ColdOutreachModal({
             Személyre szabott első üzenet
           </DialogTitle>
           <DialogDescription>
-            Claude Sonnet 4 készíti — pain pontok konstruktív felhasználásával, magyar nyelven. Te
+            Claude Sonnet 5 készíti — pain pontok konstruktív felhasználásával, magyar nyelven. Te
             felülvizsgálod, hozzáadod a vizuális koncepciót, és csak a végén küldjük el.
           </DialogDescription>
         </DialogHeader>
+
+        {/* Provenance: let the sender eyeball the REAL site before trusting the
+            AI's pain framing. Unverified leads flag a warning. */}
+        <div
+          className={cn(
+            "flex items-center gap-3 rounded-md border px-3 py-2 text-xs",
+            verifiedAt
+              ? "border-compass-green/30 bg-compass-green/5 text-compass-green"
+              : "border-amber-400/40 bg-amber-500/5 text-amber-700",
+          )}
+        >
+          {screenshotUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={screenshotUrl}
+              alt="Weboldal pillanatkép"
+              className="h-12 w-12 rounded object-cover border shrink-0"
+            />
+          ) : (
+            <ImageIcon className="h-5 w-5 shrink-0" />
+          )}
+          <span className="leading-snug">
+            {verifiedAt
+              ? "A weboldal ellenőrizve — a lenti pain pontok renderelt mérésen alapulnak."
+              : "A weboldal NINCS ellenőrizve. Nyisd meg a valós oldalt küldés előtt — a pain pontok tévesek lehetnek."}
+          </span>
+        </div>
 
         {drafting && !draft && (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">

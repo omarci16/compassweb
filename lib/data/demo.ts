@@ -67,6 +67,9 @@ export const demoLeads: Lead[] = [
     pain_signals: null,
     pain_audit: null,
     pain_audit_generated_at: null,
+    website_screenshot_url: null,
+    website_verified_at: null,
+    website_verification: null,
   },
   {
     id: "lead-2",
@@ -120,6 +123,9 @@ export const demoLeads: Lead[] = [
     pain_signals: null,
     pain_audit: null,
     pain_audit_generated_at: null,
+    website_screenshot_url: null,
+    website_verified_at: null,
+    website_verification: null,
   },
   {
     id: "lead-3",
@@ -172,6 +178,9 @@ export const demoLeads: Lead[] = [
     pain_signals: null,
     pain_audit: null,
     pain_audit_generated_at: null,
+    website_screenshot_url: null,
+    website_verified_at: null,
+    website_verification: null,
   },
   {
     id: "lead-4",
@@ -223,6 +232,9 @@ export const demoLeads: Lead[] = [
     pain_signals: null,
     pain_audit: null,
     pain_audit_generated_at: null,
+    website_screenshot_url: null,
+    website_verified_at: null,
+    website_verification: null,
   },
 ];
 
@@ -581,6 +593,9 @@ const histLead = (
   pain_signals: null,
   pain_audit: null,
   pain_audit_generated_at: null,
+  website_screenshot_url: null,
+  website_verified_at: null,
+  website_verification: null,
 });
 
 const historicalLeads: Lead[] = [

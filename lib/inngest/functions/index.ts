@@ -12,3 +12,5 @@ export { monthlyRetainerInvoice } from "./monthly-retainer";
 export { prospectingRunScrape } from "./prospecting-run-scrape";
 export { prospectingProcessResults } from "./prospecting-process-results";
 export { generatePainAudit } from "./generate-pain-audit";
+export { verifyWebsite } from "./verify-website";
+export { prospectingBackfillReverify } from "./prospecting-backfill-reverify";

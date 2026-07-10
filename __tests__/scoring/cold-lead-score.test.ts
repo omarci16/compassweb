@@ -61,6 +61,22 @@ describe("scoreColdLead", () => {
     expect(r.total).toBeGreaterThan(60);
   });
 
+  it("'we couldn't look' statuses contribute ZERO buy signal", () => {
+    // A site we couldn't reach / that blocked us / that is a JS shell must not
+    // be boosted like 'broken' — it just means we haven't seen the real site.
+    for (const status of ["blocked", "unreachable", "js_shell", "unknown"] as const) {
+      const r = scoreColdLead({
+        ...blank,
+        niche: "other",
+        website_url: "https://example.hu",
+        website_health: status,
+      });
+      // base 30, URL present so no_website (+40) does NOT fire, status adds 0.
+      expect(r.total).toBe(30);
+      expect(r.tier).toBe("low");
+    }
+  });
+
   it("redirect-to-social is treated as a strong signal", () => {
     const r = scoreColdLead({
       ...blank,
@@ -109,26 +125,32 @@ describe("scoreColdLead", () => {
     expect(low.tier).toBe("low");
   });
 
-  it("pain signals lift a healthy-site lead into the high tier", () => {
-    const r = scoreColdLead({
+  it("an UNVERIFIED healthy site with heuristic pains is capped below top tier", () => {
+    const input = {
       ...blank,
-      niche: "beauty",
+      niche: "beauty" as const,
       website_url: "https://example.hu",
-      website_health: "healthy",
+      website_health: "healthy" as const,
       gmaps_rating: 4.3,
       gmaps_review_count: 40,
       has_email: true,
       pain_signals: [
-        { code: "no_analytics", severity: "high", label_hu: "", label_en: "" },
-        { code: "no_schema", severity: "high", label_hu: "", label_en: "" },
-        { code: "no_open_graph", severity: "medium", label_hu: "", label_en: "" },
-        { code: "no_mobile_viewport", severity: "high", label_hu: "", label_en: "" },
+        { code: "no_analytics", severity: "high" as const, label_hu: "", label_en: "" },
+        { code: "no_schema", severity: "high" as const, label_hu: "", label_en: "" },
+        { code: "no_open_graph", severity: "medium" as const, label_hu: "", label_en: "" },
+        { code: "no_mobile_viewport", severity: "high" as const, label_hu: "", label_en: "" },
       ],
-    });
-    // base 30 - 5 (healthy) + 10 (beauty) + 8 (rating) + 8 (reviews) + 4 (email)
-    // + min(25, 5+5+3+5=18) = 18 → 73
-    expect(r.total).toBe(73);
-    expect(r.tier).toBe("top");
+    };
+    // Raw score would be 73, but an unverified live site is capped to 69.
+    const r = scoreColdLead(input);
+    expect(r.total).toBe(69);
+    expect(r.tier).toBe("high");
+    expect(r.signals.some((s) => s.label.includes("Unverified"))).toBe(true);
+
+    // Once verified, the same signals are trusted and it reaches top tier.
+    const verified = scoreColdLead({ ...input, website_verified: true });
+    expect(verified.total).toBe(73);
+    expect(verified.tier).toBe("top");
   });
 
   it("pain signal contribution is capped at +25", () => {

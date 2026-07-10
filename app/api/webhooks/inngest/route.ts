@@ -6,6 +6,7 @@ import {
   monthlyRetainerInvoice,
   materialsDeadlineReminder,
   projectMaterialsOverdue,
+  prospectingBackfillReverify,
   prospectingProcessResults,
   prospectingRunScrape,
   reEngagementSequence,
@@ -13,6 +14,7 @@ import {
   revisionAutoApprove,
   scoreLead,
   speedToLeadAlert,
+  verifyWebsite,
 } from "@/lib/inngest/functions";
 
 export const { GET, POST, PUT } = serve({
@@ -30,5 +32,7 @@ export const { GET, POST, PUT } = serve({
     prospectingRunScrape,
     prospectingProcessResults,
     generatePainAudit,
+    verifyWebsite,
+    prospectingBackfillReverify,
   ],
 });

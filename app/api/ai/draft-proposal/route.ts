@@ -66,7 +66,6 @@ async function draft(input: Parameters<typeof draftProposalUserPrompt>[0]): Prom
     system: DRAFT_PROPOSAL_SYSTEM,
     user: draftProposalUserPrompt(input),
     maxTokens: 1500,
-    temperature: 0.7,
   });
   return extractJson<DraftProposalResult>(text);
 }

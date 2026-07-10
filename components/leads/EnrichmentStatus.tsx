@@ -9,12 +9,20 @@ export function EnrichmentStatusBadge({
   status: EnrichmentStatus;
   className?: string;
 }) {
-  const cfg = {
+  const map: Record<
+    EnrichmentStatus,
+    { label: string; icon: typeof Sparkles; color: string; spin?: boolean }
+  > = {
     pending: { label: "Pending", icon: Sparkles, color: "text-muted-foreground bg-muted" },
     running: { label: "Enriching", icon: Loader2, color: "text-compass-blue bg-compass-blue/10", spin: true },
     complete: { label: "Enriched", icon: CheckCircle2, color: "text-compass-green bg-compass-green/10" },
+    // Distinct failure modes — "we couldn't look" must not read as "empty site".
+    crawl_failed: { label: "Crawl sikertelen", icon: AlertCircle, color: "text-compass-red bg-compass-red/10" },
+    blocked: { label: "Bot-védelem blokkolta", icon: AlertCircle, color: "text-amber-600 bg-amber-500/10" },
+    empty_site: { label: "Üres / minimál tartalom", icon: AlertCircle, color: "text-muted-foreground bg-muted" },
     failed: { label: "Failed", icon: AlertCircle, color: "text-compass-red bg-compass-red/10" },
-  }[status];
+  };
+  const cfg = map[status] ?? map.failed;
 
   return (
     <span

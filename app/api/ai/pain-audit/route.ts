@@ -7,7 +7,11 @@ import {
   PAIN_AUDIT_SYSTEM,
   painAuditUserPrompt,
 } from "@/lib/ai/prompts/pain-audit";
-import type { PainSignal, ProspectingNiche } from "@/lib/types/app.types";
+import type {
+  PainSignal,
+  ProspectingNiche,
+  WebsiteHealthStatus,
+} from "@/lib/types/app.types";
 
 const Input = z.object({
   lead_id: z.string().uuid(),
@@ -48,7 +52,7 @@ export async function POST(req: Request) {
   const { data: lead, error } = await supabase
     .from("leads")
     .select(
-      "id, company_name, niche, website_url, enrichment_summary, pain_signals, gmaps_rating, gmaps_review_count, pain_audit",
+      "id, company_name, niche, website_url, enrichment_summary, pain_signals, gmaps_rating, gmaps_review_count, pain_audit, website_health_status, website_health_details, website_verified_at",
     )
     .eq("id", lead_id)
     .single();
@@ -72,16 +76,41 @@ export async function POST(req: Request) {
     );
   }
 
-  const painSignals = Array.isArray(lead.pain_signals)
+  const health = lead.website_health_status as WebsiteHealthStatus | null;
+  if (health && ["blocked", "unreachable", "unknown", "js_shell"].includes(health)) {
+    return NextResponse.json(
+      { error: `A weboldalt nem sikerült ellenőrizni (${health}). Nincs mit auditálni.` },
+      { status: 409 },
+    );
+  }
+
+  const verifiedByNature = health === "no_website" || health === "redirect_social";
+  if (!verifiedByNature && !lead.website_verified_at && !force) {
+    return NextResponse.json(
+      { error: "A weboldal még nincs ellenőrizve. Futtasd az ellenőrzést előbb.", code: "unverified" },
+      { status: 409 },
+    );
+  }
+
+  const allSignals = Array.isArray(lead.pain_signals)
     ? (lead.pain_signals as unknown as PainSignal[])
     : [];
+  // Only verified signals inform the audit — heuristic guesses can't be stated as facts.
+  const painSignals = allSignals.filter((s) => s.confidence === "verified");
 
   if (painSignals.length === 0 && !lead.enrichment_summary) {
     return NextResponse.json(
-      { error: "No pain signals or enrichment yet — run enrichment first." },
+      { error: "Nincs ellenőrzött jelzés az audithoz." },
       { status: 400 },
     );
   }
+
+  const finalUrl =
+    lead.website_health_details &&
+    typeof lead.website_health_details === "object" &&
+    "final_url" in lead.website_health_details
+      ? ((lead.website_health_details as { final_url?: string }).final_url ?? null)
+      : null;
 
   try {
     const audit = await callClaude({
@@ -90,13 +119,14 @@ export async function POST(req: Request) {
         company_name: lead.company_name,
         niche: (lead.niche as ProspectingNiche) ?? "other",
         website_url: lead.website_url,
+        final_url: finalUrl,
+        health_status: health,
         enrichment_summary: lead.enrichment_summary,
         pain_signals: painSignals,
         gmaps_rating: lead.gmaps_rating,
         gmaps_review_count: lead.gmaps_review_count,
       }),
       maxTokens: 600,
-      temperature: 0.5,
     });
 
     const trimmed = audit.trim();

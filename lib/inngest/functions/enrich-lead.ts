@@ -1,69 +1,110 @@
 import { inngest } from "@/lib/inngest/client";
 import { createServiceClient } from "@/lib/supabase/server";
-import { crawlWebsite, getCrawlResults } from "@/lib/apify/client";
+import { crawlWebsite, getCrawlResults, getRunStatus } from "@/lib/apify/client";
 import { callClaude } from "@/lib/ai/anthropic";
 import {
   ENRICH_SUMMARY_SYSTEM,
   enrichSummaryUserPrompt,
+  looksLikeBlockedPage,
+  type EnrichPage,
 } from "@/lib/ai/prompts/enrich-summary";
+import type { EnrichmentStatus } from "@/lib/types/app.types";
+
+const TERMINAL = ["SUCCEEDED", "FAILED", "ABORTED", "TIMED-OUT", "TIMING-OUT"];
+
+function toPages(items: Record<string, unknown>[]): EnrichPage[] {
+  return items.map((it) => ({
+    url: typeof it.url === "string" ? it.url : "",
+    title: typeof it.title === "string" ? it.title : undefined,
+    text:
+      (typeof it.text === "string" && it.text) ||
+      (typeof it.markdown === "string" && it.markdown) ||
+      "",
+  }));
+}
 
 export const enrichLead = inngest.createFunction(
   { id: "enrich-lead", retries: 2 },
   { event: "lead/created" },
   async ({ event, step }) => {
     const { lead_id, website_url } = event.data;
-    if (!website_url) {
-      await step.run("mark-failed", async () => {
+
+    const persist = (status: EnrichmentStatus, summary: string, items: unknown[]) =>
+      step.run(`persist-${status}`, async () => {
         const supabase = createServiceClient();
         await supabase
           .from("leads")
           .update({
-            enrichment_status: "failed",
-            enrichment_summary: "No website URL provided.",
+            enrichment_data: items,
+            enrichment_summary: summary,
+            enrichment_status: status,
           })
           .eq("id", lead_id);
       });
+
+    if (!website_url) {
+      await persist("crawl_failed", "No website URL provided.", []);
       await step.sendEvent("score", { name: "lead/enriched", data: { lead_id } });
-      return;
+      return { ok: true, status: "crawl_failed" };
     }
 
     const run = await step.run("crawl-start", async () => crawlWebsite(website_url));
 
-    // Wait for crawl to finish (Apify usually completes in <60s for 5 pages)
-    const items = await step.run("crawl-collect", async () => {
-      let attempts = 0;
-      while (attempts < 30) {
-        const r = await getCrawlResults(run.id);
-        if (r.length > 0) return r;
+    // Poll RUN STATUS to completion (not "first item lands") so we distinguish a
+    // failed/blocked crawl from a genuinely thin site.
+    const collected = await step.run("crawl-collect", async () => {
+      let status: string | undefined;
+      for (let i = 0; i < 30; i++) {
+        status = await getRunStatus(run.id);
+        if (status && TERMINAL.includes(status)) break;
         await new Promise((res) => setTimeout(res, 4000));
-        attempts++;
       }
-      return [] as unknown[];
+      if (status !== "SUCCEEDED") {
+        return { ok: false as const, items: [] as Record<string, unknown>[] };
+      }
+      const items = await getCrawlResults(run.id);
+      return { ok: true as const, items };
     });
+
+    if (!collected.ok) {
+      await persist("crawl_failed", "A crawl nem fejeződött be sikeresen.", []);
+      await step.sendEvent("score", { name: "lead/enriched", data: { lead_id } });
+      return { ok: true, status: "crawl_failed" };
+    }
+
+    const pages = toPages(collected.items);
+    const usable = pages.filter((p) => p.text.trim().length > 0 && !looksLikeBlockedPage(p.text));
+    const anyBlocked = pages.some((p) => looksLikeBlockedPage(p.text));
+
+    if (usable.length === 0) {
+      const status: EnrichmentStatus = anyBlocked ? "blocked" : "empty_site";
+      const summary = anyBlocked
+        ? "A crawl bot-védelembe / cookie-falba ütközött — nem a valós tartalom."
+        : "Alig van tartalom az oldalon.";
+      await persist(status, summary, collected.items);
+      await step.sendEvent("score", { name: "lead/enriched", data: { lead_id } });
+      return { ok: true, status };
+    }
 
     const summary = await step.run("summarize", async () => {
-      if (!process.env.ANTHROPIC_API_KEY || items.length === 0)
-        return "Enrichment data unavailable.";
-      return callClaude({
+      if (!process.env.ANTHROPIC_API_KEY) return "Enrichment data unavailable.";
+      const text = await callClaude({
         system: ENRICH_SUMMARY_SYSTEM,
-        user: enrichSummaryUserPrompt(items.slice(0, 5)),
+        user: enrichSummaryUserPrompt(usable),
         maxTokens: 400,
-        temperature: 0.3,
       });
+      return text.trim();
     });
 
-    await step.run("persist", async () => {
-      const supabase = createServiceClient();
-      await supabase
-        .from("leads")
-        .update({
-          enrichment_data: items,
-          enrichment_summary: summary,
-          enrichment_status: items.length > 0 ? "complete" : "failed",
-        })
-        .eq("id", lead_id);
-    });
+    // The model itself flags a non-representative crawl.
+    const blockedByModel = summary.includes("CRAWL_BLOCKED");
+    const finalStatus: EnrichmentStatus = blockedByModel ? "blocked" : "complete";
+    const finalSummary = blockedByModel
+      ? "A crawl nem valós tartalmat töltött be (bot-védelem / consent)."
+      : summary;
 
+    await persist(finalStatus, finalSummary, collected.items);
     await step.sendEvent("score", { name: "lead/enriched", data: { lead_id } });
+    return { ok: true, status: finalStatus };
   },
 );

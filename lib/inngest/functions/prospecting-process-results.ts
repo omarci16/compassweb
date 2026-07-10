@@ -19,6 +19,7 @@ import {
 } from "@/lib/apify/google-maps";
 import { analyzeMany } from "@/lib/prospecting/site-analyzer";
 import {
+  HIGH_THRESHOLD,
   TOP_THRESHOLD,
   scoreColdLead,
 } from "@/lib/ai/scoring/cold-lead-score";
@@ -111,7 +112,9 @@ export const prospectingProcessResults = inngest.createFunction(
     // ----- Score + insert in batches -----
     let imported = 0;
     let topTier = 0;
-    const topTierIds: string[] = [];
+    // { id, score, health } for every inserted lead — used to decide which
+    // leads get verified (and, post-verification, audited).
+    const insertedMeta: { id: string; score: number; health: string | null }[] = [];
 
     for (let i = 0; i < novel.length; i += BATCH_SIZE) {
       const batch = novel.slice(i, i + BATCH_SIZE);
@@ -169,39 +172,56 @@ export const prospectingProcessResults = inngest.createFunction(
             onConflict: "gmaps_place_id",
             ignoreDuplicates: true,
           })
-          .select("id, win_probability");
+          .select("id, win_probability, website_health_status");
 
         if (error) {
           console.error("[prospecting] insert batch failed", error);
-          return { inserted: 0, top: 0, topIds: [] as string[] };
+          return { inserted: 0, meta: [] as { id: string; score: number; health: string | null }[] };
         }
         const insertedRows = data ?? [];
-        const topIds = insertedRows
-          .filter((r) => (r.win_probability ?? 0) >= TOP_THRESHOLD)
-          .map((r) => r.id as string);
         return {
           inserted: insertedRows.length,
-          top: topIds.length,
-          topIds,
+          meta: insertedRows.map((r) => ({
+            id: r.id as string,
+            score: r.win_probability ?? 0,
+            health: (r.website_health_status as string | null) ?? null,
+          })),
         };
       });
 
       imported += stepResult.inserted;
-      topTier += stepResult.top;
-      topTierIds.push(...stepResult.topIds);
+      insertedMeta.push(...stepResult.meta);
     }
 
-    // ----- Fan out: generate pain audit for each top-tier new lead -----
-    // We cap at 50 audits per scrape to control AI cost. Top-tier means
-    // win_probability >= 70, which already filters aggressively.
-    const AUDIT_CAP = 50;
-    const auditTargets = topTierIds.slice(0, AUDIT_CAP);
-    if (auditTargets.length > 0) {
+    topTier = insertedMeta.filter((m) => m.score >= TOP_THRESHOLD).length;
+
+    // ----- Fan out: VERIFY before auditing -----
+    // We no longer audit straight off the cheap static probe (that produced the
+    // windingatlan false positive). Instead we verify the promising leads
+    // against rendered ground truth (PSI + optional crawl); verify-website fires
+    // the pain audit only for leads that remain top-tier once verified.
+    //
+    // Targets: anything scoring in the high tier or above (worth a free PSI
+    // check), plus every JS shell / tiny page (needs a rendered crawl to know
+    // whether it's really a placeholder). Capped to control crawl cost.
+    const VERIFY_CAP = 50;
+    const verifyTargets = insertedMeta
+      .filter(
+        (m) =>
+          m.score >= HIGH_THRESHOLD ||
+          m.health === "js_shell" ||
+          m.health === "tiny",
+      )
+      .sort((a, b) => b.score - a.score)
+      .slice(0, VERIFY_CAP)
+      .map((m) => m.id);
+
+    if (verifyTargets.length > 0) {
       await step.sendEvent(
-        "fan-out-audits",
-        auditTargets.map((lead_id) => ({
-          name: "lead/pain-audit" as const,
-          data: { lead_id },
+        "fan-out-verify",
+        verifyTargets.map((lead_id) => ({
+          name: "lead/verify-site" as const,
+          data: { lead_id, audit_after: true },
         })),
       );
     }

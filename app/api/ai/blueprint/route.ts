@@ -26,7 +26,6 @@ export async function POST(req: Request) {
     system: GENERATE_BLUEPRINT_SYSTEM,
     user: generateBlueprintUserPrompt(parsed.data.wpp_form_data),
     maxTokens: 2000,
-    temperature: 0.5,
   });
   const result = extractJson<BlueprintResult>(text);
 

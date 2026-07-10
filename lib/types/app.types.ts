@@ -31,7 +31,15 @@ export type LeadStatus =
   | "lost"
   | "archived";
 
-export type EnrichmentStatus = "pending" | "running" | "complete" | "failed";
+export type EnrichmentStatus =
+  | "pending"
+  | "running"
+  | "complete"
+  | "crawl_failed"
+  | "blocked"
+  | "empty_site"
+  // "failed" is legacy — kept so old rows type-check until backfill remaps them.
+  | "failed";
 
 export type LossReason =
   | "price"
@@ -112,7 +120,15 @@ export type WebsiteHealthStatus =
   | "redirect_social"
   | "tiny"
   | "stale"
-  | "unknown";
+  | "unknown"
+  // We reached the server but a bot wall / WAF / challenge blocked us — we
+  // couldn't actually see the site, so it must never score as a buy signal.
+  | "blocked"
+  // Network error / timeout on BOTH https and http after a retry.
+  | "unreachable"
+  // Small HTML body but framework markers present — a JS-rendered shell that
+  // needs a rendered crawl before we claim it's a placeholder.
+  | "js_shell";
 
 export const PROSPECTING_NICHE_LABELS: Record<ProspectingNiche, string> = {
   beauty: "Beauty",
@@ -144,6 +160,33 @@ export type WebsiteHealthDetails = {
   redirect_to?: string;
   last_modified?: string;
   reason?: string;
+  /** The URL we actually requested (after dual-scheme resolution). */
+  requested_url?: string;
+  /** The URL that finally responded, after redirects. */
+  final_url?: string;
+  /** True when https:// itself answered (measured, not inferred from the string). */
+  https_ok?: boolean;
+  /** True when the listed scheme differed from the one that actually served content. */
+  scheme_mismatch?: boolean;
+  /** True when we retried after a first-attempt network error/timeout. */
+  retried?: boolean;
+};
+
+// How much we trust a pain signal.
+//   "verified"  — measured against the real (rendered / TLS-checked) site.
+//   "heuristic" — inferred from a single static-HTML fetch; may be a false
+//                 positive on SPAs, consent-gated tags, or JS-injected content.
+export type SignalConfidence = "verified" | "heuristic";
+
+export type ProbeMethod = "static_probe" | "rendered_crawl" | "psi";
+
+export type SignalEvidence = {
+  requested_url: string;
+  final_url: string;
+  http_status?: number;
+  content_bytes?: number;
+  checked_at: string; // ISO
+  method: ProbeMethod;
 };
 
 // Tech stack detected from a site's HTML.
@@ -168,6 +211,10 @@ export type PainSignal = {
   severity: PainSignalSeverity;
   label_hu: string;
   label_en: string;
+  // Optional so pre-existing jsonb rows (written before Lead Scraping 2.0)
+  // still satisfy the type. New signals always set both.
+  confidence?: SignalConfidence;
+  evidence?: SignalEvidence;
 };
 
 // ---------------------------------------------------------------------
