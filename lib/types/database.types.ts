@@ -102,6 +102,10 @@ export type LeadRow = {
   pain_signals: Json | null;
   pain_audit: string | null;
   pain_audit_generated_at: string | null;
+  // Site verification (added in 0006_site_verification.sql)
+  website_screenshot_url: string | null;
+  website_verified_at: string | null;
+  website_verification: Json | null;
 };
 
 export type DealRow = {

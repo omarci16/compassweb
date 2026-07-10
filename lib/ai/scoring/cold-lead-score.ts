@@ -32,6 +32,13 @@ export interface ColdLeadInput {
   /** Pain signals from site-analyzer. Each high-severity signal adds to score. */
   pain_signals?: PainSignal[];
   historical_niche_win_rates?: Record<string, number>;
+  /**
+   * True once the site was checked against rendered ground truth (PSI / crawl).
+   * A lead with a live website that has NOT been verified is capped below the
+   * top tier — a heuristic static probe alone must not create a top-tier lead
+   * (this is what let windingatlan.hu score as top on false signals).
+   */
+  website_verified?: boolean;
 }
 
 export interface ColdScoreBreakdown {
@@ -84,10 +91,14 @@ export function scoreColdLead(input: ColdLeadInput): ColdScoreBreakdown {
         // Healthy site = less need. We still score on other signals.
         signals.push({ label: "Has a working website", delta: -5 });
         break;
+      case "blocked":
+      case "unreachable":
+      case "js_shell":
       case "unknown":
       case null:
       default:
-        // No probe yet — neutral, will be re-scored later.
+        // "We couldn't look" (bot wall, timeout, JS shell) or not probed yet.
+        // These must contribute ZERO — never a buy signal — until verified.
         break;
     }
   }
@@ -169,7 +180,19 @@ export function scoreColdLead(input: ColdLeadInput): ColdScoreBreakdown {
   }
 
   const delta = signals.reduce((s, x) => s + x.delta, 0);
-  const total = clamp(BASE + delta, 0, 100);
+  let total = clamp(BASE + delta, 0, 100);
+
+  // Top-tier gate: a live website we haven't verified against rendered ground
+  // truth can't earn top tier on heuristic signals alone. `no_website` and
+  // `redirect_social` are exempt — there is no live site to render.
+  const exemptFromVerification =
+    !input.website_url ||
+    input.website_health === "no_website" ||
+    input.website_health === "redirect_social";
+  if (!input.website_verified && !exemptFromVerification && total >= TOP_THRESHOLD) {
+    total = TOP_THRESHOLD - 1;
+    signals.push({ label: "Unverified website — capped below top tier", delta: 0 });
+  }
 
   const tier: ColdScoreBreakdown["tier"] =
     total >= TOP_THRESHOLD

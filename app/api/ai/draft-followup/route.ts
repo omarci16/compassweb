@@ -54,7 +54,6 @@ export async function POST(req: Request) {
       proposed_package: deal.proposed_package,
     }),
     maxTokens: 400,
-    temperature: 0.7,
   });
   const result = extractJson<DraftFollowupResult>(text);
   return NextResponse.json(result);

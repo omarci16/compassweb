@@ -21,6 +21,7 @@ import { LeadStatusActions } from "@/components/leads/LeadStatusActions";
 import { PainSignalsList } from "@/components/leads/PainSignalsList";
 import { TechStackBadges } from "@/components/leads/TechStackBadges";
 import { PainAuditCard } from "@/components/leads/PainAuditCard";
+import { WebsiteSnapshotCard } from "@/components/leads/WebsiteSnapshotCard";
 import { ColdOutreachModal } from "@/components/leads/ColdOutreachModal";
 import {
   SOURCE_LABELS,
@@ -46,7 +47,23 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
     ? (lead.tech_stack as unknown as TechStack)
     : null;
   const isColdSourced = lead.source === "cold_outreach";
-  const canAudit = painSignals.length > 0 || !!lead.enrichment_summary;
+  const health = lead.website_health_status;
+  const finalUrl =
+    lead.website_health_details &&
+    typeof lead.website_health_details === "object" &&
+    "final_url" in lead.website_health_details
+      ? ((lead.website_health_details as { final_url?: string }).final_url ?? null)
+      : null;
+  const verifiedByNature = health === "no_website" || health === "redirect_social";
+  const unverifiable =
+    !!health && ["blocked", "unreachable", "unknown", "js_shell"].includes(health);
+  const verifiedSignals = painSignals.filter((s) => s.confidence === "verified");
+  // The audit is only generatable once the site is verified (or verifiable by
+  // nature) AND there is something verified to say.
+  const canAudit =
+    !unverifiable &&
+    (verifiedByNature || !!lead.website_verified_at) &&
+    (verifiedSignals.length > 0 || !!lead.enrichment_summary);
 
   return (
     <div className="space-y-6">
@@ -88,6 +105,8 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                 hasEmail={!!lead.email}
                 recipientEmail={lead.email}
                 companyName={lead.company_name}
+                screenshotUrl={lead.website_screenshot_url}
+                verifiedAt={lead.website_verified_at}
               />
             )}
             <ScoreLeadButton leadId={lead.id} />
@@ -163,6 +182,16 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
               )}
             </CardContent>
           </Card>
+
+          {isColdSourced && lead.website_url && (
+            <WebsiteSnapshotCard
+              leadId={lead.id}
+              websiteUrl={lead.website_url}
+              screenshotUrl={lead.website_screenshot_url}
+              verifiedAt={lead.website_verified_at}
+              finalUrl={finalUrl}
+            />
+          )}
 
           {isColdSourced && (
             <PainAuditCard

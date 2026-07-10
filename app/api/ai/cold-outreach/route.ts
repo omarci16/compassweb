@@ -2,16 +2,25 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/data/queries";
-import { callClaude, extractJson } from "@/lib/ai/anthropic";
+import { callClaude, extractJsonWithSchema } from "@/lib/ai/anthropic";
 import {
   COLD_OUTREACH_SYSTEM,
   coldOutreachUserPrompt,
-  type ColdOutreachResult,
 } from "@/lib/ai/prompts/cold-outreach";
 import type { ProspectingNiche } from "@/lib/types/app.types";
 
 const Input = z.object({
   lead_id: z.string().uuid(),
+});
+
+const ColdOutreachSchema = z.object({
+  email_subject: z.string(),
+  email_body_html: z.string(),
+  email_body_text: z.string(),
+  visual_concept: z.string(),
+  primary_pain_point_used: z.string(),
+  personalization_hook: z.string(),
+  tone_notes: z.string(),
 });
 
 export async function POST(req: Request) {
@@ -84,10 +93,9 @@ export async function POST(req: Request) {
         enrichment_summary: lead.enrichment_summary,
       }),
       maxTokens: 1400,
-      temperature: 0.55,
     });
 
-    const result = extractJson<ColdOutreachResult>(text);
+    const result = extractJsonWithSchema(text, ColdOutreachSchema);
     return NextResponse.json({ ok: true, result });
   } catch (err) {
     console.error("cold outreach drafting failed", err);

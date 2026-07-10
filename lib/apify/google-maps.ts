@@ -83,15 +83,24 @@ export async function startGoogleMapsScrape(
 }
 
 /**
- * Fetch all dataset items from a completed run.
- * Apify pages internally — we ask for everything in one call.
+ * Fetch ALL dataset items from a completed run, paginating so large scrapes
+ * (hundreds–thousands of places) don't silently truncate at the client default.
  */
 export async function getGoogleMapsResults(runId: string): Promise<GoogleMapsRaw[]> {
   const apify = getApifyClient();
   const run = await apify.run(runId).get();
   if (!run) return [];
-  const { items } = await apify.dataset(run.defaultDatasetId).listItems();
-  return items as unknown as GoogleMapsRaw[];
+  const ds = apify.dataset(run.defaultDatasetId);
+  const all: GoogleMapsRaw[] = [];
+  let offset = 0;
+  const limit = 1000;
+  while (true) {
+    const { items } = await ds.listItems({ offset, limit });
+    all.push(...(items as unknown as GoogleMapsRaw[]));
+    if (items.length < limit) break;
+    offset += items.length;
+  }
+  return all;
 }
 
 // ---------------------------------------------------------------------

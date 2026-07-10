@@ -101,8 +101,8 @@ export function PainAuditCard({ leadId, audit: initialAudit, generatedAt: initia
         ) : (
           <p className="text-sm text-muted-foreground italic">
             {canGenerate
-              ? "Még nincs audit. Generáláskor az AI a detektált jeleket fordítja le konkrét üzleti veszteségekre."
-              : "Audit nem generálható — nincsenek detektált jelek vagy enrichment adatok."}
+              ? "Még nincs audit. Generáláskor az AI csak az ELLENŐRZÖTT jeleket fordítja le konkrét üzleti veszteségekre."
+              : "Audit nem generálható — előbb ellenőrizd a weboldalt (fent), vagy nincs ellenőrzött jel / enrichment adat."}
           </p>
         )}
       </CardContent>

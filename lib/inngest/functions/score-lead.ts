@@ -1,6 +1,7 @@
 import { inngest } from "@/lib/inngest/client";
 import { createServiceClient } from "@/lib/supabase/server";
-import { callClaude, extractJson } from "@/lib/ai/anthropic";
+import { z } from "zod";
+import { callClaude, extractJsonWithSchema } from "@/lib/ai/anthropic";
 import {
   SCORE_LEAD_SYSTEM,
   scoreLeadUserPrompt,
@@ -57,7 +58,13 @@ export const scoreLead = inngest.createFunction(
           }),
           maxTokens: 600,
         });
-        const parsed = extractJson<{ adjusted_score: number; reasons: string[] }>(text);
+        const parsed = extractJsonWithSchema(
+          text,
+          z.object({
+            adjusted_score: z.number().min(0).max(100),
+            reasons: z.array(z.string()),
+          }),
+        );
         return {
           adjustment: parsed.adjusted_score - base.total,
           reasons: parsed.reasons,

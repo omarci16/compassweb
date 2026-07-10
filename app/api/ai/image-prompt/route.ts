@@ -78,7 +78,6 @@ export async function POST(req: Request) {
         package_hint: lead.package_interest,
       }),
       maxTokens: 700,
-      temperature: 0.6,
     });
 
     return NextResponse.json({ ok: true, prompt: text.trim() });
