@@ -56,6 +56,44 @@
     reveals.forEach(el => el.classList.add('in'));
   }
 
+  // Problem section (the "honest part") — head + cards ease in tied to
+  // actual scroll position rather than a one-shot timed fade, so they
+  // visibly rise into view as the sheet scrolls up regardless of how
+  // fast the user scrolls. Same technique as the Operations manifesto.
+  const fadeEls = document.querySelectorAll('.problem-pin__head, .problem-card--pin');
+  if (fadeEls.length && !prefersReducedMotion && 'IntersectionObserver' in window) {
+    fadeEls.forEach((el, i) => {
+      let active = false;
+      let raf = 0;
+
+      const apply = () => {
+        const rect = el.getBoundingClientRect();
+        const vh = window.innerHeight;
+        const start = vh * 0.92 - i * 12;
+        const end = vh * 0.52 - i * 12;
+        const p = Math.min(1, Math.max(0, (start - rect.top) / (start - end)));
+        el.style.setProperty('--reveal', p.toFixed(4));
+      };
+
+      const tick = () => {
+        apply();
+        raf = active ? requestAnimationFrame(tick) : 0;
+      };
+
+      const io = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting) {
+          if (!active) { active = true; raf = requestAnimationFrame(tick); }
+        } else {
+          active = false;
+          if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        }
+      }, { rootMargin: '20% 0px 20% 0px' });
+      io.observe(el);
+    });
+  } else {
+    fadeEls.forEach(el => el.style.setProperty('--reveal', 1));
+  }
+
   // Stat counters
   const stats = document.querySelectorAll('[data-count]');
   if ('IntersectionObserver' in window && stats.length) {
@@ -706,6 +744,19 @@
     let active = slides.findIndex(s => s.classList.contains('is-active'));
     if (active < 0) active = 0;
     let timer = null;
+
+    // The starting slide ships pre-lit in HTML (so something shows if JS
+    // never runs), which means its zoom has no "before" state to animate
+    // from — it just paints already-zoomed. Reset it and let it re-trigger
+    // on the next frame so it zooms in like every other slide.
+    const firstImg = slides[active].querySelector('img');
+    if (firstImg) {
+      firstImg.style.transition = 'none';
+      firstImg.style.transform = 'scale(1.001)';
+      firstImg.getBoundingClientRect(); // force reflow
+      firstImg.style.transition = '';
+      requestAnimationFrame(() => { firstImg.style.transform = ''; });
+    }
 
     const show = (i) => {
       slides[active].classList.remove('is-active');

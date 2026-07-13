@@ -5332,6 +5332,20 @@ p { margin: 0 0 var(--space-2); }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
+.problem-pin__manifesto {
+  padding-bottom: clamp(56px, 8vw, 112px);
+}
+
+/* Head + cards ease in tracking actual scroll position (not a one-shot
+   timed fade) so they visibly rise into view whether the user scrolls
+   fast or slow — same technique as the Operations manifesto/scene. */
+.js .problem-pin__head,
+.js .problem-card--pin {
+  opacity: var(--reveal, 0);
+  transform: translateY(calc((1 - var(--reveal, 0)) * 40px));
+  filter: blur(calc((1 - var(--reveal, 0)) * 8px));
+}
+
 .problem-pin__head {
   max-width: 760px;
   margin-bottom: clamp(28px, 5vw, 48px);
@@ -7580,7 +7594,7 @@ h1, h2, h3, h4, h5,
 .opsx-w { transition: color 0.3s linear; }
 .js .opsx-manifesto.is-split .opsx-w { color: rgba(240, 237, 232, 0.16); }
 .js .opsx-manifesto.is-split .opsx-w.on { color: var(--color-text-primary); }
-.js .opsx-manifesto.is-split em .opsx-w.on { color: var(--color-accent); }
+.js .opsx-manifesto.is-split em .opsx-w.on { color: rgb(var(--accent-rgb)); }
 
 /* ----- The Layer scene ----- */
 .opsx-scene { position: relative; }
@@ -7795,6 +7809,7 @@ h1, h2, h3, h4, h5,
 .opsx-slot {
   position: relative;
   flex: 1 1 auto;
+  padding: 4px;
   border: 1px solid rgba(var(--accent-rgb), 0.30);
   border-radius: var(--radius-md);
   background: rgba(var(--accent-rgb), 0.06);
@@ -7806,7 +7821,13 @@ h1, h2, h3, h4, h5,
   flex-direction: column;
   align-items: center;
   gap: 7px;
-  padding: 11px 10px 10px;
+  padding: 9px 10px 8px;
+  border-radius: calc(var(--radius-md) - 3px);
+  background: rgba(10, 10, 13, 0.86);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(var(--accent-rgb), 0.26);
+  box-shadow: 0 14px 28px -16px rgba(0, 0, 0, 0.85);
 }
 
 .opsx-slot__chip svg {
@@ -7833,6 +7854,14 @@ h1, h2, h3, h4, h5,
   border-color: rgba(255, 255, 255, 0.14);
   background: transparent;
 }
+.opsx-slot--ghost .opsx-slot__chip {
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
+}
 .opsx-slot--ghost .opsx-slot__chip svg,
 .opsx-slot--ghost .opsx-slot__chip span { color: var(--color-text-tertiary); opacity: 1; }
 
@@ -7849,8 +7878,12 @@ h1, h2, h3, h4, h5,
 }
 
 .opsx-scene.is-stacking:not(.is-docked) .opsx-slot__chip {
-  opacity: 0.32;
+  opacity: 0.96;
   transform: translate(var(--jx, 0px), var(--jy, -80px)) rotate(var(--jr, 0deg));
+}
+
+.opsx-scene.is-stacking:not(.is-docked) .opsx-slot--ghost .opsx-slot__chip {
+  opacity: 0.32;
 }
 
 .opsx-scene.is-stacking.is-docked .opsx-slot {
