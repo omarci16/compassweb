@@ -552,3 +552,238 @@
     else if (pinDesktop.addListener) pinDesktop.addListener(setup);
   });
 })();
+
+/* =========================================================
+   Operations page — Operating Layer experience
+   ========================================================= */
+
+// Manifesto word fill — words brighten one by one, driven by scroll position,
+// like a highlighter moving with the reader. Skipped entirely under reduced
+// motion or without IntersectionObserver: the text simply stays fully lit.
+(() => {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const blocks = document.querySelectorAll('[data-wordfill]');
+  if (!blocks.length || reduced || !('IntersectionObserver' in window)) return;
+
+  blocks.forEach((block) => {
+    const words = [];
+    const split = (node) => {
+      Array.from(node.childNodes).forEach((child) => {
+        if (child.nodeType === 3) {
+          const frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach((piece) => {
+            if (!piece) return;
+            if (/^\s+$/.test(piece)) {
+              frag.appendChild(document.createTextNode(piece));
+            } else {
+              const s = document.createElement('span');
+              s.className = 'opsx-w';
+              s.textContent = piece;
+              words.push(s);
+              frag.appendChild(s);
+            }
+          });
+          node.replaceChild(frag, child);
+        } else if (child.nodeType === 1) {
+          split(child);
+        }
+      });
+    };
+    split(block);
+    if (!words.length) return;
+    block.classList.add('is-split');
+
+    let active = false;
+    let raf = 0;
+    let lastOn = 0;
+
+    const apply = () => {
+      const rect = block.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const start = vh * 0.82;
+      const end = vh * 0.42;
+      const p = Math.min(1, Math.max(0, (start - rect.top) / (rect.height + start - end)));
+      const on = Math.round(p * words.length);
+      if (on > lastOn) {
+        for (let i = lastOn; i < on; i++) words[i].classList.add('on');
+      } else if (on < lastOn) {
+        for (let i = on; i < lastOn; i++) words[i].classList.remove('on');
+      }
+      lastOn = on;
+    };
+
+    const tick = () => {
+      apply();
+      raf = active ? requestAnimationFrame(tick) : 0;
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        if (!active) { active = true; raf = requestAnimationFrame(tick); }
+      } else {
+        active = false;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      }
+    }, { rootMargin: '15% 0px 15% 0px' });
+    io.observe(block);
+  });
+})();
+
+// Operating Layer scene — the stage pins while scroll progress drives three
+// acts: foundation (dashed slots, scattered modules) → modules dock →
+// system goes live (activity feed streams in, memory strip lights up).
+// Desktop + motion-OK only; otherwise the scene renders as a normal static
+// section in its final, fully-assembled state.
+(() => {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const desktop = window.matchMedia('(min-width: 961px)');
+
+  document.querySelectorAll('[data-opsx-scene]').forEach((scene) => {
+    const beats = Array.from(scene.querySelectorAll('.opsx-beat'));
+    const dots = Array.from(scene.querySelectorAll('.opsx-scene__progress span'));
+    let active = false;
+    let raf = 0;
+
+    const apply = () => {
+      const rect = scene.getBoundingClientRect();
+      const total = rect.height - window.innerHeight;
+      const p = total > 0 ? Math.min(1, Math.max(0, -rect.top / total)) : 1;
+      scene.style.setProperty('--p', p.toFixed(4));
+      scene.classList.toggle('is-docked', p >= 0.32);
+      scene.classList.toggle('is-live', p >= 0.62);
+      const beat = p >= 0.62 ? 2 : p >= 0.32 ? 1 : 0;
+      beats.forEach((el, i) => el.classList.toggle('is-active', i === beat));
+      dots.forEach((el, i) => el.classList.toggle('is-active', i <= beat));
+    };
+
+    const tick = () => {
+      apply();
+      raf = active ? requestAnimationFrame(tick) : 0;
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && scene.classList.contains('is-stacking')) {
+        if (!active) { active = true; raf = requestAnimationFrame(tick); }
+      } else {
+        active = false;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+      }
+    }, { rootMargin: '12% 0px 12% 0px' });
+
+    const setup = () => {
+      if (desktop.matches && !reduced && 'IntersectionObserver' in window) {
+        scene.classList.add('is-stacking');
+        apply();
+        io.observe(scene);
+      } else {
+        io.disconnect();
+        active = false;
+        if (raf) { cancelAnimationFrame(raf); raf = 0; }
+        scene.classList.remove('is-stacking', 'is-docked', 'is-live');
+        scene.style.removeProperty('--p');
+        beats.forEach((el) => el.classList.remove('is-active'));
+        dots.forEach((el) => el.classList.remove('is-active'));
+      }
+    };
+
+    setup();
+    if (desktop.addEventListener) desktop.addEventListener('change', setup);
+    else if (desktop.addListener) desktop.addListener(setup);
+  });
+})();
+
+// Generic ambient photo rotator — slow, natural crossfade between real
+// photography, independent of scroll. Runs only while in view; frozen on
+// its first frame under reduced motion.
+(() => {
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduced || !('IntersectionObserver' in window)) return;
+
+  document.querySelectorAll('[data-photo-rotator]').forEach((rotator) => {
+    const slides = Array.from(rotator.querySelectorAll('.photo-rotator__slide'));
+    if (slides.length < 2) return;
+
+    let active = slides.findIndex(s => s.classList.contains('is-active'));
+    if (active < 0) active = 0;
+    let timer = null;
+
+    const show = (i) => {
+      slides[active].classList.remove('is-active');
+      active = i;
+      slides[active].classList.add('is-active');
+    };
+
+    const tick = () => show((active + 1) % slides.length);
+    const start = () => { if (!timer) timer = setInterval(tick, 6000); };
+    const stop = () => { if (timer) { clearInterval(timer); timer = null; } };
+
+    const io = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) start();
+      else stop();
+    }, { threshold: 0.2 });
+    io.observe(rotator);
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        const r = rotator.getBoundingClientRect();
+        if (r.top < window.innerHeight && r.bottom > 0) start();
+      }
+    });
+  });
+})();
+
+// Operations — diagnostic ledger (single-open accordion with measured-height
+// animation). Without JS every row stays open, so the content is always
+// available; here we collapse all but the first and wire up the toggles.
+(() => {
+  document.querySelectorAll('.ops-ledger').forEach((ledger) => {
+    const rows = Array.from(ledger.querySelectorAll('.ledger__row'));
+    if (!rows.length) return;
+
+    const bodyOf = (row) => row.querySelector('.ledger__body');
+    const headOf = (row) => row.querySelector('.ledger__head');
+
+    const collapse = (row) => {
+      const body = bodyOf(row);
+      row.classList.remove('is-open');
+      headOf(row).setAttribute('aria-expanded', 'false');
+      body.style.height = body.scrollHeight + 'px';
+      body.getBoundingClientRect(); // force reflow
+      body.style.height = '0px';
+    };
+
+    const expand = (row) => {
+      const body = bodyOf(row);
+      row.classList.add('is-open');
+      headOf(row).setAttribute('aria-expanded', 'true');
+      const target = body.scrollHeight;
+      body.style.height = '0px';
+      body.getBoundingClientRect(); // force reflow
+      body.style.height = target + 'px';
+      body.addEventListener('transitionend', function done(e) {
+        if (e.propertyName === 'height' && row.classList.contains('is-open')) {
+          body.style.height = 'auto';
+        }
+        body.removeEventListener('transitionend', done);
+      });
+    };
+
+    // Initial state: honour the row marked is-open, collapse the rest.
+    rows.forEach((row) => {
+      bodyOf(row).style.height = row.classList.contains('is-open') ? 'auto' : '0px';
+    });
+
+    rows.forEach((row) => {
+      headOf(row).addEventListener('click', () => {
+        if (row.classList.contains('is-open')) {
+          collapse(row);
+        } else {
+          rows.forEach((r) => { if (r !== row && r.classList.contains('is-open')) collapse(r); });
+          expand(row);
+        }
+      });
+    });
+  });
+})();
