@@ -9,6 +9,8 @@ import {
   Stethoscope,
   Dumbbell,
   Building2,
+  Scale,
+  UtensilsCrossed,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -24,13 +26,18 @@ import {
   PROSPECTING_NICHE_LABELS,
   type ProspectingNiche,
 } from "@/lib/types/app.types";
-import { COST_PER_RESULT_USD } from "@/lib/apify/google-maps-constants";
+import {
+  COST_PER_RESULT_USD,
+  PROSPECTING_CITIES,
+} from "@/lib/apify/google-maps-constants";
 
 const NICHE_ICONS: Record<ProspectingNiche, typeof Sparkles> = {
   beauty: Sparkles,
   fitness: Dumbbell,
   dental: Stethoscope,
   real_estate: Building2,
+  legal: Scale,
+  hospitality: UtensilsCrossed,
   other: Hammer,
 };
 
@@ -43,18 +50,19 @@ const NICHE_BLURBS: Record<ProspectingNiche, string> = {
     "Fogászatok — magas büdzsé, professzionális image-igény. Hatékonyan konvertál.",
   real_estate:
     "Ingatlanirodák — sok rossz minőségű oldal, magas volumen.",
+  legal:
+    "Ügyvédi irodák — magas büdzsé, konzervatív image-igény, gyakran elavult oldal.",
+  hospitality:
+    "Éttermek, kávézók, panziók — nagy volumen, sok gyenge vagy hiányzó oldal.",
   other: "Egyéb — adj meg saját keresési kifejezéseket.",
 };
 
-const CITIES = [
-  { value: "Budapest", label: "Budapest" },
-  { value: "Debrecen", label: "Debrecen" },
-  { value: "Szeged", label: "Szeged" },
-  { value: "Miskolc", label: "Miskolc" },
-  { value: "Pécs", label: "Pécs" },
-  { value: "Győr", label: "Győr" },
-  { value: "Hungary", label: "Egész Magyarország" },
-] as const;
+// Single source of truth lives in google-maps-constants (PROSPECTING_CITIES).
+const CITY_LABELS: Record<string, string> = { Hungary: "Egész Magyarország" };
+const CITIES = PROSPECTING_CITIES.map((value) => ({
+  value,
+  label: CITY_LABELS[value] ?? value,
+}));
 
 export function ScrapeLauncher({ niche }: { niche: ProspectingNiche }) {
   const router = useRouter();

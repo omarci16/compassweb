@@ -282,6 +282,60 @@ export async function getSourceEffectiveness(): Promise<SourceEffectivenessRow[]
   });
 }
 
+/**
+ * Pure: turn closed-lead rows into a per-niche win rate (%). Only niches with
+ * at least `minClosed` closed deals are returned, so a single fluke win/loss
+ * can't swing a niche's score. Exported so Inngest functions (which use the
+ * service client) can share the exact logic with the cookie-client query below.
+ */
+export function computeNicheWinRates(
+  rows: { niche: string | null; status: string }[],
+  minClosed = 5,
+): Record<string, number> {
+  const buckets = new Map<string, { wins: number; total: number }>();
+  for (const r of rows) {
+    if (!r.niche) continue;
+    if (r.status !== "won" && r.status !== "lost") continue;
+    const b = buckets.get(r.niche) ?? { wins: 0, total: 0 };
+    b.total += 1;
+    if (r.status === "won") b.wins += 1;
+    buckets.set(r.niche, b);
+  }
+  const out: Record<string, number> = {};
+  for (const [niche, b] of buckets) {
+    if (b.total >= minClosed) out[niche] = Math.round((b.wins / b.total) * 100);
+  }
+  return out;
+}
+
+/**
+ * Historical win rate (%) per niche, from closed leads (won vs won+lost).
+ * Feeds `scoreColdLead`'s `historical_niche_win_rates` input so the scorer
+ * nudges niches up/down by proven conversion — the "prompt-based improvement"
+ * loop from CLAUDE.md §8.1, but purely deterministic here.
+ */
+export async function getNicheWinRates(): Promise<Record<string, number>> {
+  if (!isSupabaseConfigured()) {
+    return computeNicheWinRates(
+      demoLeads.map((l) => ({ niche: l.niche, status: l.status })),
+    );
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("niche, status")
+    .in("status", ["won", "lost"])
+    .limit(5000);
+  if (error) {
+    console.error("getNicheWinRates error", error);
+    return {};
+  }
+  return computeNicheWinRates(
+    (data ?? []) as { niche: string | null; status: string }[],
+  );
+}
+
 export async function getScrapingJobs(opts?: { limit?: number }): Promise<ScrapingJob[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = createClient();

@@ -14,6 +14,7 @@ export {
   COST_PER_RESULT_USD,
   NICHE_SEARCH_TERMS,
   DEFAULT_CITIES,
+  PROSPECTING_CITIES,
 } from "./google-maps-constants";
 
 export interface GoogleMapsRun {

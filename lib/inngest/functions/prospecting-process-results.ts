@@ -18,11 +18,13 @@ import {
   type LeadCandidate,
 } from "@/lib/apify/google-maps";
 import { analyzeMany } from "@/lib/prospecting/site-analyzer";
+import { normalizeWebsiteHost } from "@/lib/prospecting/normalize";
 import {
   HIGH_THRESHOLD,
   TOP_THRESHOLD,
   scoreColdLead,
 } from "@/lib/ai/scoring/cold-lead-score";
+import { computeNicheWinRates } from "@/lib/data/queries";
 import type { ProspectingNiche } from "@/lib/types/app.types";
 
 const BATCH_SIZE = 50;
@@ -71,8 +73,9 @@ export const prospectingProcessResults = inngest.createFunction(
     const existing = await step.run("fetch-existing", async (): Promise<{
       placeIds: string[];
       phones: string[];
+      hosts: string[];
     }> => {
-      const [byPlace, byPhone] = await Promise.all([
+      const [byPlace, byPhone, byHost] = await Promise.all([
         placeIds.length > 0
           ? supabase
               .from("leads")
@@ -82,6 +85,14 @@ export const prospectingProcessResults = inngest.createFunction(
         phones.length > 0
           ? supabase.from("leads").select("phone").in("phone", phones)
           : Promise.resolve({ data: [] as { phone: string | null }[] }),
+        // Website host can't be matched with an `.in()` (we store full URLs), so
+        // pull existing cold-lead URLs and normalise in code. Bounded to the
+        // cold-lead corpus — fine for a two-person ops tool (see queries.ts).
+        supabase
+          .from("leads")
+          .select("website_url")
+          .not("website_url", "is", null)
+          .limit(10000),
       ]);
       return {
         placeIds: ((byPlace.data ?? []) as { gmaps_place_id: string | null }[])
@@ -90,23 +101,48 @@ export const prospectingProcessResults = inngest.createFunction(
         phones: ((byPhone.data ?? []) as { phone: string | null }[])
           .map((r) => r.phone)
           .filter((x): x is string => !!x),
+        hosts: ((byHost.data ?? []) as { website_url: string | null }[])
+          .map((r) => normalizeWebsiteHost(r.website_url))
+          .filter((x): x is string => !!x),
       };
     });
 
     const placeSet = new Set(existing.placeIds);
     const phoneSet = new Set(existing.phones);
+    const hostSet = new Set(existing.hosts);
 
-    const novel = candidates.filter(
-      (c) =>
-        !(c.gmaps_place_id && placeSet.has(c.gmaps_place_id)) &&
-        !(c.gmaps_phone && phoneSet.has(c.gmaps_phone)),
-    );
+    // Dedupe against existing leads (place_id, phone, website host) AND within
+    // the incoming batch itself (two search terms can return the same place).
+    const seenHosts = new Set<string>();
+    const novel = candidates.filter((c) => {
+      if (c.gmaps_place_id && placeSet.has(c.gmaps_place_id)) return false;
+      if (c.gmaps_phone && phoneSet.has(c.gmaps_phone)) return false;
+      const host = normalizeWebsiteHost(c.website_url);
+      if (host) {
+        if (hostSet.has(host) || seenHosts.has(host)) return false;
+        seenHosts.add(host);
+      }
+      return true;
+    });
     const duplicates = totalScraped - novel.length;
 
     // ----- Deep site analysis: health + tech stack + pain signals (parallel) -----
     const analyses = await step.run("analyze-sites", async () => {
       const urls = novel.map((c) => c.website_url);
       return analyzeMany(urls, 6);
+    });
+
+    // Historical niche win rates (deterministic scorer input) — computed once
+    // per run from the closed-lead corpus via the service client.
+    const nicheWinRates = await step.run("niche-win-rates", async () => {
+      const { data } = await supabase
+        .from("leads")
+        .select("niche, status")
+        .in("status", ["won", "lost"])
+        .limit(5000);
+      return computeNicheWinRates(
+        (data ?? []) as { niche: string | null; status: string }[],
+      );
     });
 
     // ----- Score + insert in batches -----
@@ -133,6 +169,7 @@ export const prospectingProcessResults = inngest.createFunction(
             has_email: !!c.email,
             has_phone: !!c.gmaps_phone,
             pain_signals: analysis.pain_signals,
+            historical_niche_win_rates: nicheWinRates,
           });
           return {
             company_name: c.company_name,

@@ -7,7 +7,7 @@ import { NICHE_SEARCH_TERMS } from "@/lib/apify/google-maps";
 import type { ProspectingNiche } from "@/lib/types/app.types";
 
 const StartJobInput = z.object({
-  niche: z.enum(["beauty", "fitness", "dental", "real_estate", "other"]),
+  niche: z.enum(["beauty", "fitness", "dental", "real_estate", "legal", "hospitality", "other"]),
   city: z.string().min(1),
   max_results: z.number().int().min(20).max(2000).default(200),
   // Optional override; if omitted we use the niche defaults

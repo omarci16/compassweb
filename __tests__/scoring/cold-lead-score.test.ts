@@ -185,6 +185,55 @@ describe("scoreColdLead", () => {
     expect(r.total).toBe(70);
   });
 
+  it("legal is a high-value niche (+12), like dental", () => {
+    const r = scoreColdLead({
+      ...blank,
+      niche: "legal",
+      website_url: null,
+      website_health: "no_website",
+    });
+    // base 30 + no_website 40 + legal 12 = 82
+    expect(r.signals.some((s) => s.label.includes("legal"))).toBe(true);
+    expect(r.total).toBe(82);
+    expect(r.tier).toBe("top");
+  });
+
+  it("hospitality gets a moderate niche boost (+6)", () => {
+    const withNiche = scoreColdLead({
+      ...blank,
+      niche: "hospitality",
+      website_url: null,
+      website_health: "no_website",
+    });
+    const otherBaseline = scoreColdLead({
+      ...blank,
+      niche: "other",
+      website_url: null,
+      website_health: "no_website",
+    });
+    // hospitality (+6) sits above 'other' (0) but below dental/legal (+12).
+    expect(withNiche.total - otherBaseline.total).toBe(6);
+  });
+
+  it("historical niche win rate nudges the score up and down", () => {
+    const up = scoreColdLead({
+      ...blank,
+      niche: "dental",
+      website_url: null,
+      website_health: "no_website",
+      historical_niche_win_rates: { dental: 75 },
+    });
+    const down = scoreColdLead({
+      ...blank,
+      niche: "dental",
+      website_url: null,
+      website_health: "no_website",
+      historical_niche_win_rates: { dental: 10 },
+    });
+    // >60% → +8, <20% → -8, so a 16-point swing.
+    expect(up.total - down.total).toBe(16);
+  });
+
   it("clamps to 0–100", () => {
     const r = scoreColdLead({
       ...blank,

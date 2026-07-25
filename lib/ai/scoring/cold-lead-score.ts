@@ -62,6 +62,10 @@ const HIGH_VALUE_NICHES: Record<ProspectingNiche, number> = {
   dental: 12,
   real_estate: 8,
   fitness: 10,
+  // Legal (ügyvédek): high budget + strong professional-image need — closes like dental.
+  legal: 12,
+  // Hospitality (éttermek/kávézók): high volume, thinner budgets — a moderate boost.
+  hospitality: 6,
   other: 0,
 };
 

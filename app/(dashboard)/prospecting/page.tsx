@@ -6,6 +6,7 @@ import {
 } from "@/lib/data/queries";
 import { Stat } from "@/components/shared/Stat";
 import { ScrapeLauncher } from "@/components/prospecting/ScrapeLauncher";
+import { BatchLauncher } from "@/components/prospecting/BatchLauncher";
 import { ScrapingJobsList } from "@/components/prospecting/ScrapingJobsList";
 import { SourceEffectiveness } from "@/components/prospecting/SourceEffectiveness";
 import { Target, Flame, Calendar, DollarSign } from "lucide-react";
@@ -72,10 +73,18 @@ export default async function ProspectingPage() {
         />
       </div>
 
+      {/* Batch launcher — verticals × cities in one click */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Batch indítás
+        </h2>
+        <BatchLauncher />
+      </section>
+
       {/* Launcher cards */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Vadászat indítása
+          Vadászat indítása (egyesével)
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {(Object.keys(PROSPECTING_NICHE_LABELS) as Array<keyof typeof PROSPECTING_NICHE_LABELS>).map(

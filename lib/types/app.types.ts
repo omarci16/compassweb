@@ -102,7 +102,14 @@ export type ReEngagementStatus = "active" | "paused" | "converted" | "unsubscrib
 // Prospecting (cold lead sourcing)
 // ---------------------------------------------------------------------
 
-export type ProspectingNiche = "beauty" | "fitness" | "dental" | "real_estate" | "other";
+export type ProspectingNiche =
+  | "beauty"
+  | "fitness"
+  | "dental"
+  | "real_estate"
+  | "legal"
+  | "hospitality"
+  | "other";
 
 export type ScrapingJobStatus =
   | "queued"
@@ -135,6 +142,8 @@ export const PROSPECTING_NICHE_LABELS: Record<ProspectingNiche, string> = {
   fitness: "Fitness",
   dental: "Dental",
   real_estate: "Real estate",
+  legal: "Legal",
+  hospitality: "Hospitality",
   other: "Other",
 };
 
@@ -143,6 +152,8 @@ export const PROSPECTING_NICHE_LABELS_HU: Record<ProspectingNiche, string> = {
   fitness: "Fitness",
   dental: "Fogászat",
   real_estate: "Ingatlan",
+  legal: "Ügyvéd / jog",
+  hospitality: "Vendéglátás",
   other: "Egyéb",
 };
 
