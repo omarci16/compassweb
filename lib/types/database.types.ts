@@ -106,6 +106,14 @@ export type LeadRow = {
   website_screenshot_url: string | null;
   website_verified_at: string | null;
   website_verification: Json | null;
+  // Email verification (added in 0008_scraping_2_1.sql)
+  email_status: string | null;
+  email_verified: boolean;
+  email_checked_at: string | null;
+  // Buying signals & offer routing (added in 0008_scraping_2_1.sql)
+  ads_signal: Json | null;
+  recently_opened: boolean;
+  offer_track: string | null;
 };
 
 export type DealRow = {

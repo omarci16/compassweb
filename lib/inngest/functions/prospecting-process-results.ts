@@ -19,6 +19,7 @@ import {
 } from "@/lib/apify/google-maps";
 import { analyzeMany } from "@/lib/prospecting/site-analyzer";
 import { normalizeWebsiteHost } from "@/lib/prospecting/normalize";
+import { verifyManyEmails } from "@/lib/prospecting/email-verify";
 import {
   HIGH_THRESHOLD,
   TOP_THRESHOLD,
@@ -132,6 +133,13 @@ export const prospectingProcessResults = inngest.createFunction(
       return analyzeMany(urls, 6);
     });
 
+    // ----- Free email verification (syntax + MX + disposable/role) -----
+    // Gates hard bounces before they can touch the sending domain. Aligned to
+    // `novel` by index.
+    const emailChecks = await step.run("verify-emails", async () => {
+      return verifyManyEmails(novel.map((c) => c.email), 8);
+    });
+
     // Historical niche win rates (deterministic scorer input) — computed once
     // per run from the closed-lead corpus via the service client.
     const nicheWinRates = await step.run("niche-win-rates", async () => {
@@ -156,9 +164,12 @@ export const prospectingProcessResults = inngest.createFunction(
       const batch = novel.slice(i, i + BATCH_SIZE);
       const batchAnalyses = analyses.slice(i, i + BATCH_SIZE);
 
+      const batchEmailChecks = emailChecks.slice(i, i + BATCH_SIZE);
+
       const stepResult = await step.run(`insert-batch-${i}`, async () => {
         const rows = batch.map((c, idx) => {
           const analysis = batchAnalyses[idx];
+          const emailCheck = batchEmailChecks[idx];
           const score = scoreColdLead({
             niche: c.niche,
             gmaps_rating: c.gmaps_rating,
@@ -198,6 +209,9 @@ export const prospectingProcessResults = inngest.createFunction(
             win_probability: score.total,
             win_probability_reasons: score.signals.map((s) => s.label),
             enrichment_status: "pending" as const,
+            email_status: emailCheck?.email_status ?? "unknown",
+            email_verified: emailCheck ? emailCheck.email_status !== "unknown" : false,
+            email_checked_at: emailCheck ? new Date().toISOString() : null,
           };
         });
 

@@ -98,6 +98,13 @@ export type EmailType =
 
 export type ReEngagementStatus = "active" | "paused" | "converted" | "unsubscribed";
 
+// Free in-code email verification (Scraping 2.1, Phase B).
+//   valid   — syntax ok, not disposable, domain has MX
+//   risky   — role account (info@/office@…) or MX unverifiable — sendable, low trust
+//   invalid — bad syntax, disposable, or no mail server → never queued for sending
+//   unknown — no email on the lead / not yet checked
+export type EmailStatus = "valid" | "risky" | "invalid" | "unknown";
+
 // ---------------------------------------------------------------------
 // Prospecting (cold lead sourcing)
 // ---------------------------------------------------------------------
@@ -282,12 +289,16 @@ export const SOURCE_LABELS: Record<LeadSource, string> = {
 // Strongly typed re-exports (so domain code never deals with `string` enum cols)
 // ---------------------------------------------------------------------
 
-export type Lead = Omit<LeadRow, "source" | "status" | "enrichment_status" | "loss_reason" | "package_interest"> & {
+export type Lead = Omit<
+  LeadRow,
+  "source" | "status" | "enrichment_status" | "loss_reason" | "package_interest" | "email_status"
+> & {
   source: LeadSource;
   status: LeadStatus;
   enrichment_status: EnrichmentStatus;
   loss_reason: LossReason | null;
   package_interest: Package | null;
+  email_status: EmailStatus | null;
 };
 
 export type Deal = Omit<DealRow, "stage" | "proposed_package"> & {
