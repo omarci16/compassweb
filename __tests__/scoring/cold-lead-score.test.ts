@@ -234,6 +234,41 @@ describe("scoreColdLead", () => {
     expect(up.total - down.total).toBe(16);
   });
 
+  it("runs_ads adds a budget signal (+10)", () => {
+    const withAds = scoreColdLead({
+      ...blank,
+      niche: "other",
+      website_url: "https://x.hu",
+      website_health: "healthy",
+      runs_ads: true,
+    });
+    const without = scoreColdLead({
+      ...blank,
+      niche: "other",
+      website_url: "https://x.hu",
+      website_health: "healthy",
+    });
+    expect(withAds.total - without.total).toBe(10);
+    expect(withAds.signals.some((s) => s.label.includes("ads"))).toBe(true);
+  });
+
+  it("recently_opened adds a timing signal (+5)", () => {
+    const withNew = scoreColdLead({
+      ...blank,
+      niche: "other",
+      website_url: "https://x.hu",
+      website_health: "healthy",
+      recently_opened: true,
+    });
+    const without = scoreColdLead({
+      ...blank,
+      niche: "other",
+      website_url: "https://x.hu",
+      website_health: "healthy",
+    });
+    expect(withNew.total - without.total).toBe(5);
+  });
+
   it("clamps to 0–100", () => {
     const r = scoreColdLead({
       ...blank,

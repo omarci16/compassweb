@@ -20,6 +20,7 @@ import {
 import { analyzeMany } from "@/lib/prospecting/site-analyzer";
 import { normalizeWebsiteHost } from "@/lib/prospecting/normalize";
 import { verifyManyEmails } from "@/lib/prospecting/email-verify";
+import { deriveOfferTrack, isRecentlyOpened } from "@/lib/prospecting/offer-track";
 import {
   HIGH_THRESHOLD,
   TOP_THRESHOLD,
@@ -170,6 +171,7 @@ export const prospectingProcessResults = inngest.createFunction(
         const rows = batch.map((c, idx) => {
           const analysis = batchAnalyses[idx];
           const emailCheck = batchEmailChecks[idx];
+          const recentlyOpened = isRecentlyOpened(c.gmaps_rating, c.gmaps_review_count);
           const score = scoreColdLead({
             niche: c.niche,
             gmaps_rating: c.gmaps_rating,
@@ -181,6 +183,14 @@ export const prospectingProcessResults = inngest.createFunction(
             has_phone: !!c.gmaps_phone,
             pain_signals: analysis.pain_signals,
             historical_niche_win_rates: nicheWinRates,
+            recently_opened: recentlyOpened,
+          });
+          // Static offer route (ads unknown at import — verify refines it).
+          const offerTrack = deriveOfferTrack({
+            website_url: c.website_url,
+            website_health: analysis.health_status,
+            pain_signals: analysis.pain_signals,
+            tech_stack: analysis.tech_stack,
           });
           return {
             company_name: c.company_name,
@@ -212,6 +222,8 @@ export const prospectingProcessResults = inngest.createFunction(
             email_status: emailCheck?.email_status ?? "unknown",
             email_verified: emailCheck ? emailCheck.email_status !== "unknown" : false,
             email_checked_at: emailCheck ? new Date().toISOString() : null,
+            recently_opened: recentlyOpened,
+            offer_track: offerTrack,
           };
         });
 

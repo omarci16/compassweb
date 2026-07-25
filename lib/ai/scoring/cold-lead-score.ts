@@ -39,6 +39,10 @@ export interface ColdLeadInput {
    * (this is what let windingatlan.hu score as top on false signals).
    */
   website_verified?: boolean;
+  /** Runs paid ads (Meta Ad Library) — has budget + growth intent. */
+  runs_ads?: boolean;
+  /** Newly opened business (review-velocity heuristic) — good timing. */
+  recently_opened?: boolean;
 }
 
 export interface ColdScoreBreakdown {
@@ -149,6 +153,16 @@ export function scoreColdLead(input: ColdLeadInput): ColdScoreBreakdown {
   if (input.has_phone) signals.push({ label: "Phone available", delta: 2 });
   if (input.social_links_count >= 2) {
     signals.push({ label: "Active on social", delta: 3 });
+  }
+
+  // ----- Buying-intent signals (Scraping 2.1) -----
+  // Already spends on ads → has a marketing budget and wants growth.
+  if (input.runs_ads) {
+    signals.push({ label: "Runs paid ads — has budget", delta: 10 });
+  }
+  // Newly opened → forming their web presence now; good timing to reach out.
+  if (input.recently_opened) {
+    signals.push({ label: "Recently opened — good timing", delta: 5 });
   }
 
   // ----- Pain signals: each detected pain is a buying trigger -----

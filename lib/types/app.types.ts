@@ -105,6 +105,20 @@ export type ReEngagementStatus = "active" | "paused" | "converted" | "unsubscrib
 //   unknown — no email on the lead / not yet checked
 export type EmailStatus = "valid" | "risky" | "invalid" | "unknown";
 
+// Offer routing (Scraping 2.1, Phase C) — which pitch this lead gets.
+//   needs_site   — no usable site (no_website/broken/redirect_social/tiny): pitch "here's a concept"
+//   upgrade      — working site + a concrete hook (stale, Wix, no analytics, runs ads…): pitch "convert more"
+//   low_priority — healthy, strong, no hook / unverifiable: don't spend a touch yet
+export type OfferTrack = "needs_site" | "upgrade" | "low_priority";
+
+// Buying signal: does the business currently run paid ads? (Meta Ad Library.)
+export type AdsSignal = {
+  runs_ads: boolean;
+  source: "meta_ad_library";
+  ad_count?: number;
+  checked_at: string; // ISO
+};
+
 // ---------------------------------------------------------------------
 // Prospecting (cold lead sourcing)
 // ---------------------------------------------------------------------
@@ -291,7 +305,13 @@ export const SOURCE_LABELS: Record<LeadSource, string> = {
 
 export type Lead = Omit<
   LeadRow,
-  "source" | "status" | "enrichment_status" | "loss_reason" | "package_interest" | "email_status"
+  | "source"
+  | "status"
+  | "enrichment_status"
+  | "loss_reason"
+  | "package_interest"
+  | "email_status"
+  | "offer_track"
 > & {
   source: LeadSource;
   status: LeadStatus;
@@ -299,6 +319,7 @@ export type Lead = Omit<
   loss_reason: LossReason | null;
   package_interest: Package | null;
   email_status: EmailStatus | null;
+  offer_track: OfferTrack | null;
 };
 
 export type Deal = Omit<DealRow, "stage" | "proposed_package"> & {

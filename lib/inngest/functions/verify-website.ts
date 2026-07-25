@@ -16,7 +16,10 @@ import {
   type PsiResult,
 } from "@/lib/prospecting/verify-site";
 import { TOP_THRESHOLD, scoreColdLead } from "@/lib/ai/scoring/cold-lead-score";
+import { deriveOfferTrack, isRecentlyOpened } from "@/lib/prospecting/offer-track";
+import { detectAdsSignal } from "@/lib/prospecting/ads-signal";
 import type {
+  AdsSignal,
   PainSignal,
   ProspectingNiche,
   TechStack,
@@ -78,13 +81,26 @@ export const verifyWebsite = inngest.createFunction(
       runPagespeed(probeUrl),
     );
 
-    // ----- 2. Rendered crawl, only when content classification is in doubt -----
+    // Preliminary offer route from the (pre-verification) signals. Upgrade leads
+    // — a working site with a real hook — get the rendered crawl too, so the
+    // "convert more" audit is grounded in real content, not the static probe.
+    const preTrack = deriveOfferTrack({
+      website_url: lead.website_url,
+      website_health: health,
+      pain_signals: Array.isArray(lead.pain_signals)
+        ? (lead.pain_signals as unknown as PainSignal[])
+        : [],
+      tech_stack: (lead.tech_stack as unknown as TechStack | null) ?? null,
+    });
+
+    // ----- 2. Rendered crawl, when content classification is in doubt OR upgrade -----
     let rendered: { html: string | null; runId: string | null } = { html: null, runId: null };
-    if (health === "js_shell" || health === "tiny") {
+    if (health === "js_shell" || health === "tiny" || preTrack === "upgrade") {
       rendered = await step.run("render-crawl", async () => {
         try {
           const run = await crawlWebsite(psi?.final_url || probeUrl, {
-            maxCrawlPages: 1,
+            // Upgrade audits want more than the homepage to ground the pitch.
+            maxCrawlPages: preTrack === "upgrade" ? 2 : 1,
             crawlerType: "playwright:firefox",
             saveHtml: true,
           });
@@ -98,6 +114,13 @@ export const verifyWebsite = inngest.createFunction(
         }
       });
     }
+
+    // ----- 2b. Optional buying signal: are they running paid ads? -----
+    // No-ops to null without META_AD_LIBRARY_TOKEN (see ads-signal.ts).
+    const ads = await step.run("detect-ads", async (): Promise<AdsSignal | null> =>
+      detectAdsSignal(lead.company_name),
+    );
+    const recentlyOpened = isRecentlyOpened(lead.gmaps_rating, lead.gmaps_review_count);
 
     // ----- 3. Merge verified truth into the stored signals -----
     const currentSignals = Array.isArray(lead.pain_signals)
@@ -146,6 +169,17 @@ export const verifyWebsite = inngest.createFunction(
       has_phone: !!lead.gmaps_phone,
       pain_signals: merged.pain_signals,
       website_verified: true,
+      runs_ads: ads?.runs_ads ?? false,
+      recently_opened: recentlyOpened,
+    });
+
+    // Final offer route on verified truth (+ ads signal).
+    const offerTrack = deriveOfferTrack({
+      website_url: lead.website_url,
+      website_health: merged.health_status,
+      pain_signals: merged.pain_signals,
+      tech_stack: merged.tech_stack,
+      runs_ads: ads?.runs_ads ?? false,
     });
 
     // ----- 6. Persist -----
@@ -169,6 +203,9 @@ export const verifyWebsite = inngest.createFunction(
           },
           win_probability: score.total,
           win_probability_reasons: score.signals.map((s) => s.label),
+          ads_signal: ads,
+          recently_opened: recentlyOpened,
+          offer_track: offerTrack,
         })
         .eq("id", lead_id);
     });
