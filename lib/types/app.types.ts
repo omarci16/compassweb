@@ -4,8 +4,12 @@ import type {
   EmailLogRow,
   InvoiceRow,
   LeadRow,
+  OutreachDraftRow,
+  OutreachSendRow,
   ProjectRow,
   ScrapingJobRow,
+  SendingInboxRow,
+  SuppressionRow,
   TemplateRow,
 } from "./database.types";
 
@@ -351,6 +355,53 @@ export type ScrapingJob = Omit<ScrapingJobRow, "niche" | "status"> & {
   niche: ProspectingNiche;
   status: ScrapingJobStatus;
 };
+
+// ---------------------------------------------------------------------
+// Outreach machine (Scraping 2.1)
+// ---------------------------------------------------------------------
+
+export type OutreachDraftStatus =
+  | "draft"
+  | "approved"
+  | "scheduled"
+  | "sent"
+  | "skipped";
+
+// Delivery lifecycle for a single send (mutable — lives in outreach_sends,
+// NOT email_log which is append-only).
+export type OutreachSendStatus =
+  | "queued"
+  | "sent"
+  | "delivered"
+  | "opened"
+  | "clicked"
+  | "bounced"
+  | "complained"
+  | "unsubscribed"
+  | "failed";
+
+export type SuppressionReason =
+  | "unsubscribe"
+  | "bounce"
+  | "complaint"
+  | "manual"
+  | "invalid";
+
+export type OutreachDraft = Omit<OutreachDraftRow, "track" | "status" | "visual_urls"> & {
+  track: OfferTrack;
+  status: OutreachDraftStatus;
+  visual_urls: string[];
+};
+
+export type OutreachSend = Omit<OutreachSendRow, "status"> & {
+  status: OutreachSendStatus;
+};
+
+export type Suppression = Omit<SuppressionRow, "reason"> & {
+  reason: SuppressionReason;
+};
+
+export type SendingInbox = SendingInboxRow;
 
 // ---------------------------------------------------------------------
 // API response shapes

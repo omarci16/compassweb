@@ -20,6 +20,15 @@ type Events = {
   "prospecting/backfill-reverify": {
     data: { batch_size?: number; dry_run?: boolean; cursor?: string };
   };
+  // Outreach machine (Scraping 2.1)
+  // Batch-generate AI drafts into the approval queue for routed cold leads.
+  "outreach/generate-drafts": {
+    data: { track?: string; limit?: number; min_score?: number };
+  };
+  // Pull approved drafts and send them via a rotated inbox (throttled).
+  "outreach/send-queue": { data: Record<string, never> };
+  // Advance a lead's cold follow-up sequence (draft next touch into the queue).
+  "outreach/sequence-tick": { data: Record<string, never> };
 };
 
 export const inngest = new Inngest({

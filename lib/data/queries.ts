@@ -7,9 +7,13 @@ import type {
   DailyBriefingItem,
   Deal,
   EmailLog,
+  EmailStatus,
   Invoice,
   Lead,
   LeadStatus,
+  OutreachDraft,
+  OutreachDraftStatus,
+  OfferTrack,
   Project,
   ScrapingJob,
 } from "@/lib/types/app.types";
@@ -18,6 +22,7 @@ import {
   demoEmailLog,
   demoInvoices,
   demoLeads,
+  demoOutreachDrafts,
   demoProjects,
 } from "./demo";
 import { differenceInDays } from "date-fns";
@@ -436,6 +441,85 @@ export async function getEmailLog(opts?: {
   if (opts?.limit) query = query.limit(opts.limit);
   const { data } = await query;
   return (data ?? []) as unknown as EmailLog[];
+}
+
+// ---------------------------------------------------------------------
+// Outreach approval queue (Scraping 2.1)
+// ---------------------------------------------------------------------
+
+export interface OutreachDraftView extends OutreachDraft {
+  company_name: string;
+  email: string | null;
+  email_status: EmailStatus | null;
+  offer_track_lead: OfferTrack | null;
+}
+
+const DRAFT_VIEW_COLUMNS =
+  "id, created_at, updated_at, lead_id, track, subject, body_html, body_text, visual_urls, visual_concept, sequence_id, touch_number, spintax_variant, status, approved_at, approved_by, ai_meta";
+
+export async function getOutreachDrafts(opts?: {
+  statuses?: OutreachDraftStatus[];
+  limit?: number;
+}): Promise<OutreachDraftView[]> {
+  const statuses = opts?.statuses ?? ["draft", "approved", "scheduled"];
+  const limit = opts?.limit ?? 100;
+
+  if (!isSupabaseConfigured()) {
+    const leadById = new Map(demoLeads.map((l) => [l.id, l]));
+    return demoOutreachDrafts
+      .filter((d) => statuses.includes(d.status))
+      .slice(0, limit)
+      .map((d) => {
+        const lead = leadById.get(d.lead_id);
+        return {
+          ...d,
+          company_name: lead?.company_name ?? "—",
+          email: lead?.email ?? null,
+          email_status: lead?.email_status ?? null,
+          offer_track_lead: lead?.offer_track ?? null,
+        };
+      });
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("outreach_drafts")
+    .select(DRAFT_VIEW_COLUMNS)
+    .in("status", statuses)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("getOutreachDrafts error", error);
+    return [];
+  }
+  const drafts = (data ?? []) as unknown as OutreachDraft[];
+  const leadIds = Array.from(new Set(drafts.map((d) => d.lead_id)));
+  const { data: leadRows } = leadIds.length
+    ? await supabase
+        .from("leads")
+        .select("id, company_name, email, email_status, offer_track")
+        .in("id", leadIds)
+    : { data: [] as unknown[] };
+  const leadMap = new Map(
+    ((leadRows ?? []) as {
+      id: string;
+      company_name: string;
+      email: string | null;
+      email_status: string | null;
+      offer_track: string | null;
+    }[]).map((l) => [l.id, l]),
+  );
+  return drafts.map((d) => {
+    const lead = leadMap.get(d.lead_id);
+    return {
+      ...d,
+      visual_urls: Array.isArray(d.visual_urls) ? d.visual_urls : [],
+      company_name: lead?.company_name ?? "—",
+      email: lead?.email ?? null,
+      email_status: (lead?.email_status as EmailStatus | null) ?? null,
+      offer_track_lead: (lead?.offer_track as OfferTrack | null) ?? null,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------

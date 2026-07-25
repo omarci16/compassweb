@@ -14,3 +14,4 @@ export { prospectingProcessResults } from "./prospecting-process-results";
 export { generatePainAudit } from "./generate-pain-audit";
 export { verifyWebsite } from "./verify-website";
 export { prospectingBackfillReverify } from "./prospecting-backfill-reverify";
+export { outreachGenerateDrafts } from "./outreach-generate-drafts";

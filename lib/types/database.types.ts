@@ -35,6 +35,10 @@ export type Database = {
       templates: TableDef<TemplateRow>;
       users_profile: TableDef<UserProfileRow>;
       scraping_jobs: TableDef<ScrapingJobRow>;
+      outreach_drafts: TableDef<OutreachDraftRow>;
+      outreach_sends: TableDef<OutreachSendRow>;
+      suppression_list: TableDef<SuppressionRow>;
+      sending_inboxes: TableDef<SendingInboxRow>;
     };
     Views: {
       [key: string]: {
@@ -295,4 +299,65 @@ export type ScrapingJobRow = {
   estimated_cost_usd: number | null;
   triggered_by: string | null;
   notes: string | null;
+};
+
+// Outreach machine (Scraping 2.1) — see 0009_outreach_drafts.sql + 0010_outreach_sending.sql.
+
+export type OutreachDraftRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  lead_id: string;
+  track: string;
+  subject: string;
+  body_html: string;
+  body_text: string;
+  visual_urls: Json | null;
+  visual_concept: string | null;
+  sequence_id: string | null;
+  touch_number: number;
+  spintax_variant: string | null;
+  status: string;
+  approved_at: string | null;
+  approved_by: string | null;
+  ai_meta: Json | null;
+};
+
+export type OutreachSendRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  draft_id: string | null;
+  lead_id: string | null;
+  inbox: string | null;
+  resend_message_id: string | null;
+  status: string;
+  to_address: string;
+  sent_at: string | null;
+  opened_at: string | null;
+  clicked_at: string | null;
+  bounced_at: string | null;
+  complained_at: string | null;
+  unsubscribed_at: string | null;
+  error_message: string | null;
+};
+
+export type SuppressionRow = {
+  id: string;
+  created_at: string;
+  email: string | null;
+  domain: string | null;
+  reason: string;
+  notes: string | null;
+};
+
+export type SendingInboxRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  address: string;
+  from_name: string | null;
+  daily_cap: number;
+  warmup_started_at: string | null;
+  active: boolean;
 };

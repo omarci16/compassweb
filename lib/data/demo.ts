@@ -7,6 +7,7 @@ import type {
   EmailLog,
   Invoice,
   Lead,
+  OutreachDraft,
   Project,
 } from "@/lib/types/app.types";
 
@@ -724,6 +725,64 @@ export const demoEmailLog: EmailLog[] = [
     resend_message_id: null,
     type: "staging_delivery",
     ai_drafted: false,
+  },
+];
+
+// ---------------------------------------------------------------------
+// Outreach approval queue — drafts awaiting human review
+// ---------------------------------------------------------------------
+
+export const demoOutreachDrafts: OutreachDraft[] = [
+  {
+    id: "draft-1",
+    created_at: daysAgo(0.2),
+    updated_at: daysAgo(0.2),
+    lead_id: "lead-2",
+    track: "needs_site",
+    subject: "Egy gyors koncepció a Bistro Budának",
+    body_html:
+      "<p>Kedves Nagy Péter!</p><p>Láttuk a Bistro Budát a budai éttermek között — a napi menü ötlete kifejezetten szimpatikus.</p><p>Készítettünk egy gyors koncepciót arról, hogyan nézhetne ki egy foglalást is támogató felület. A mellékletben látható.</p><p>Ha érdekli, szívesen leülnénk 15 percre egy kötetlen beszélgetésre.</p><p>Üdvözlettel,<br/>Compass Marketing</p>",
+    body_text:
+      "Kedves Nagy Péter!\n\nLáttuk a Bistro Budát a budai éttermek között — a napi menü ötlete kifejezetten szimpatikus.\n\nKészítettünk egy gyors koncepciót arról, hogyan nézhetne ki egy foglalást is támogató felület.\n\nÜdvözlettel,\nCompass Marketing",
+    visual_urls: [],
+    visual_concept:
+      "Meleg, organikus hangulatú étterem-mockup laptop képernyőn, fent a logóval, alatta a napi menüvel és egy foglalás gombbal.",
+    sequence_id: null,
+    touch_number: 1,
+    spintax_variant: "0",
+    status: "draft",
+    approved_at: null,
+    approved_by: null,
+    ai_meta: {
+      primary_pain_point_used: "nincs online foglalás",
+      personalization_hook: "daily menu concept",
+      tone_notes: "warm, constructive",
+    },
+  },
+  {
+    id: "draft-2",
+    created_at: daysAgo(0.5),
+    updated_at: daysAgo(0.4),
+    lead_id: "lead-4",
+    track: "upgrade",
+    subject: "Néhány ötlet a Horváth Optika oldalához",
+    body_html:
+      "<p>Tisztelt Horváth Optika!</p><p>Az oldaluk szolid alap — látszik, hogy adnak a megjelenésre.</p><p>Két konkrét lehetőséget láttunk, amivel több érdeklődőt hozhatna: mérhető adatok beállítása, és egy strukturált adat réteg a jobb kereshetőségért.</p><p>Készítettünk egy gyors előtte/utána koncepciót egy szekcióra — szívesen megmutatjuk.</p><p>Üdvözlettel,<br/>Compass Marketing</p>",
+    body_text:
+      "Tisztelt Horváth Optika!\n\nAz oldaluk szolid alap — látszik, hogy adnak a megjelenésre.\n\nKét konkrét lehetőséget láttunk...\n\nÜdvözlettel,\nCompass Marketing",
+    visual_urls: [],
+    visual_concept: "Előtte/utána koncepció a főoldal hero szekciójáról, letisztult, prémium optikai stílusban.",
+    sequence_id: null,
+    touch_number: 1,
+    spintax_variant: null,
+    status: "approved",
+    approved_at: daysAgo(0.3),
+    approved_by: null,
+    ai_meta: {
+      primary_pain_point_used: "nincs analitika",
+      personalization_hook: "solid base, measurable data",
+      tone_notes: "respectful, upgrade framing",
+    },
   },
 ];
 

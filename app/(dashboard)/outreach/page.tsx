@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { Mail, Snowflake, Sparkles } from "lucide-react";
+import { Inbox, Mail, Snowflake, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { OutreachQueue } from "@/components/outreach/OutreachQueue";
 import {
   getEmailLog,
   getDeals,
   getLeads,
+  getOutreachDrafts,
   getProjects,
 } from "@/lib/data/queries";
 import { formatRelativeHu } from "@/lib/utils/format";
@@ -36,12 +38,15 @@ const TYPE_VARIANT: Record<string, "default" | "info" | "purple" | "warning" | "
 };
 
 export default async function OutreachPage() {
-  const [log, deals, leads, projects] = await Promise.all([
+  const [log, deals, leads, projects, drafts] = await Promise.all([
     getEmailLog({ direction: "outbound", limit: 100 }),
     getDeals(),
     getLeads({ limit: 500 }),
     getProjects(),
+    getOutreachDrafts({ statuses: ["draft", "approved", "scheduled"], limit: 100 }),
   ]);
+
+  const pendingCount = drafts.filter((d) => d.status === "draft").length;
 
   const recipientFor = (e: typeof log[number]) => {
     if (e.project_id) {
@@ -81,9 +86,25 @@ export default async function OutreachPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Outreach</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Outbound email log. AI-drafted emails are flagged so you can audit what the system wrote vs you wrote.
+          Jóváhagyási sor és kimenő email napló. Minden AI-piszkozatot Te hagysz jóvá — semmi nem megy ki automatikusan.
         </p>
       </div>
+
+      {/* Approval queue — the human gate before any cold send */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Inbox className="h-4 w-4 text-primary" />
+            Jóváhagyási sor
+            {pendingCount > 0 && (
+              <Badge variant="purple" className="font-normal">{pendingCount}</Badge>
+            )}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <OutreachQueue drafts={drafts} />
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <Card>
