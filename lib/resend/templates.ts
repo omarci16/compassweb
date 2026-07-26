@@ -11,13 +11,19 @@ export interface ColdOutreachHtmlOptions {
   visualUrls: string[];
   /** Alt text for the images (e.g. "{Company} — koncepció"). */
   visualAlt: string;
+  /** One-click unsubscribe URL. When present, a "Leiratkozás" footer link is added. */
+  unsubscribeUrl?: string;
 }
 
 export function renderColdOutreachHtml({
   bodyHtml,
   visualUrls,
   visualAlt,
+  unsubscribeUrl,
 }: ColdOutreachHtmlOptions): string {
+  const unsubscribeBlock = unsubscribeUrl
+    ? `<br /><a href="${escapeAttr(unsubscribeUrl)}" style="color:#9ca3af; text-decoration:underline;">Leiratkozás</a>`
+    : "";
   const visualsBlock = visualUrls.length === 0
     ? ""
     : visualUrls
@@ -63,7 +69,7 @@ export function renderColdOutreachHtml({
               <hr style="border:none; border-top:1px solid #ececec; margin:16px 0;" />
               <p style="margin:0; font-size:12px; line-height:1.6; color:#6b7280;">
                 Compass Marketing Kft. · Budapest, Magyarország<br />
-                <a href="mailto:info@compassmarketing.hu" style="color:#534AB7; text-decoration:none;">info@compassmarketing.hu</a>
+                <a href="mailto:info@compassmarketing.hu" style="color:#534AB7; text-decoration:none;">info@compassmarketing.hu</a>${unsubscribeBlock}
               </p>
             </td>
           </tr>

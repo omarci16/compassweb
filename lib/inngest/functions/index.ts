@@ -15,3 +15,4 @@ export { generatePainAudit } from "./generate-pain-audit";
 export { verifyWebsite } from "./verify-website";
 export { prospectingBackfillReverify } from "./prospecting-backfill-reverify";
 export { outreachGenerateDrafts } from "./outreach-generate-drafts";
+export { outreachSendQueue } from "./outreach-send-queue";

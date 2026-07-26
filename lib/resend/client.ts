@@ -20,6 +20,10 @@ export interface SendEmailInput {
   html?: string;
   text?: string;
   replyTo?: string;
+  /** Override sender for inbox rotation (Scraping 2.1). Defaults to FROM_EMAIL. */
+  from?: string;
+  /** Extra headers, e.g. List-Unsubscribe / List-Unsubscribe-Post (RFC 8058). */
+  headers?: Record<string, string>;
 }
 
 export async function sendEmail(input: SendEmailInput) {
@@ -29,10 +33,11 @@ export async function sendEmail(input: SendEmailInput) {
   const html = input.html;
   const text = input.text ?? (html ? undefined : input.subject);
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: input.from ?? FROM_EMAIL,
     to: input.to,
     subject: input.subject,
     ...(html ? { html } : { text: text! }),
     replyTo: input.replyTo,
+    ...(input.headers ? { headers: input.headers } : {}),
   });
 }

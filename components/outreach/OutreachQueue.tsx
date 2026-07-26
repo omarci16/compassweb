@@ -6,6 +6,7 @@ import {
   Check,
   ChevronDown,
   Loader2,
+  Send,
   Sparkles,
   ThumbsUp,
   X,
@@ -39,6 +40,7 @@ export function OutreachQueue({ drafts }: { drafts: OutreachDraftView[] }) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [expanded, setExpanded] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [sendingQueue, setSendingQueue] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +103,27 @@ export function OutreachQueue({ drafts }: { drafts: OutreachDraftView[] }) {
       setError(err instanceof Error ? err.message : "Ismeretlen hiba");
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function startSending() {
+    setSendingQueue(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/outreach/send-queue", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "Nem sikerült elindítani a küldést");
+        return;
+      }
+      setNotice(
+        "Küldés elindítva — a jóváhagyott levelek rotált postafiókokból, napi limit és 3–7 perc időzítés mellett mennek ki.",
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ismeretlen hiba");
+    } finally {
+      setSendingQueue(false);
     }
   }
 
@@ -213,6 +236,21 @@ export function OutreachQueue({ drafts }: { drafts: OutreachDraftView[] }) {
             <Button size="sm" onClick={() => void bulkApprove()}>
               <ThumbsUp className="h-3.5 w-3.5 mr-1.5" />
               {selected.size} kijelölt jóváhagyása
+            </Button>
+          )}
+          {approved.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => void startSending()}
+              disabled={sendingQueue}
+            >
+              {sendingQueue ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+              ) : (
+                <Send className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              Jóváhagyottak küldése ({approved.length})
             </Button>
           )}
         </div>
