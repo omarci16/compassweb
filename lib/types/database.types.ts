@@ -253,6 +253,8 @@ export type ReEngagementRow = {
   touch_count: number;
   last_touch_at: string | null;
   last_touch_type: string | null;
+  // 're_engagement' | 'cold_followup' (added in 0011_cold_followups.sql)
+  kind: string;
 };
 
 export type TemplateRow = {

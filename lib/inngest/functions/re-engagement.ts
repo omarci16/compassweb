@@ -12,6 +12,7 @@ export const reEngagementSequence = inngest.createFunction(
         .from("re_engagement_sequences")
         .select("*")
         .eq("status", "active")
+        .eq("kind", "re_engagement")
         .lte("next_touch_at", today),
     );
 

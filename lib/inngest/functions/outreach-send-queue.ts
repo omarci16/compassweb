@@ -17,6 +17,7 @@ import {
   pickInbox,
   randomSpacingSeconds,
 } from "@/lib/outreach/inbox-rotation";
+import { followupGapDays } from "@/lib/outreach/sequence";
 import type { SendingInbox } from "@/lib/types/app.types";
 
 const PER_RUN = 6; // drafts per invocation; re-emits to continue if more remain
@@ -29,6 +30,7 @@ interface ApprovedDraft {
   body_text: string;
   visual_urls: unknown;
   track: string;
+  touch_number: number;
 }
 
 interface DraftLead {
@@ -100,7 +102,7 @@ export const outreachSendQueue = inngest.createFunction(
     const drafts = await step.run("approved-drafts", async () => {
       const { data } = await supabase
         .from("outreach_drafts")
-        .select("id, lead_id, subject, body_html, body_text, visual_urls, track")
+        .select("id, lead_id, subject, body_html, body_text, visual_urls, track, touch_number")
         .eq("status", "approved")
         .order("created_at", { ascending: true })
         .limit(PER_RUN + 1);
@@ -200,6 +202,31 @@ export const outreachSendQueue = inngest.createFunction(
             .update({ first_contact_at: nowIso })
             .eq("id", draft.lead_id)
             .is("first_contact_at", null);
+
+          // Enroll in the cold follow-up cadence on the FIRST touch (touch 1).
+          // The sequence-tick cron drafts touches 2–3 into the approval queue.
+          if (draft.touch_number === 1) {
+            const { data: existingSeq } = await supabase
+              .from("re_engagement_sequences")
+              .select("id")
+              .eq("lead_id", draft.lead_id)
+              .eq("kind", "cold_followup")
+              .limit(1)
+              .maybeSingle();
+            if (!existingSeq) {
+              await supabase.from("re_engagement_sequences").insert({
+                lead_id: draft.lead_id,
+                kind: "cold_followup",
+                status: "active",
+                touch_count: 1,
+                last_touch_at: nowIso,
+                last_touch_type: "cold_1",
+                next_touch_at: new Date(
+                  Date.now() + followupGapDays(1) * 86_400_000,
+                ).toISOString(),
+              });
+            }
+          }
 
           return { outcome: "sent" as const, inbox: inbox.address };
         } catch (err) {

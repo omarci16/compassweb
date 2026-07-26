@@ -8,6 +8,7 @@ import {
   projectMaterialsOverdue,
   outreachGenerateDrafts,
   outreachSendQueue,
+  outreachSequenceTick,
   prospectingBackfillReverify,
   prospectingProcessResults,
   prospectingRunScrape,
@@ -38,5 +39,6 @@ export const { GET, POST, PUT } = serve({
     prospectingBackfillReverify,
     outreachGenerateDrafts,
     outreachSendQueue,
+    outreachSequenceTick,
   ],
 });

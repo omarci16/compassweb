@@ -7,12 +7,21 @@
 
 import { callClaude, extractJsonWithSchema } from "@/lib/ai/anthropic";
 import {
+  COLD_FOLLOWUP_SYSTEM,
   ColdOutreachSchema,
+  coldFollowupUserPrompt,
   coldOutreachUserPrompt,
   pickColdOutreachSystem,
 } from "@/lib/ai/prompts/cold-outreach";
 import { renderDraftBody, verifiedSignalLabels } from "@/lib/outreach/draft-content";
 import type { OfferTrack, PainSignal, ProspectingNiche } from "@/lib/types/app.types";
+
+export interface GenerateDraftOptions {
+  /** 1 = first cold email; 2/3 = follow-up touches. */
+  touchNumber?: number;
+  /** Links the draft to its re_engagement_sequences row. */
+  sequenceId?: string | null;
+}
 
 export interface DraftLeadInput {
   id: string;
@@ -38,6 +47,7 @@ export interface OutreachDraftInsert {
   visual_concept: string;
   spintax_variant: string | null;
   touch_number: number;
+  sequence_id: string | null;
   status: "draft";
   ai_meta: {
     primary_pain_point_used: string;
@@ -48,27 +58,34 @@ export interface OutreachDraftInsert {
 
 export async function generateDraftPayload(
   lead: DraftLeadInput,
+  opts: GenerateDraftOptions = {},
 ): Promise<OutreachDraftInsert> {
   const track = ((lead.offer_track as OfferTrack | null) ?? "needs_site") as OfferTrack;
+  const touchNumber = opts.touchNumber ?? 1;
+  const isFollowup = touchNumber > 1;
   const verified = verifiedSignalLabels(
     Array.isArray(lead.pain_signals) ? (lead.pain_signals as unknown as PainSignal[]) : [],
   );
 
+  const promptInput = {
+    company_name: lead.company_name,
+    contact_name: lead.contact_name,
+    niche: (lead.niche as ProspectingNiche) ?? null,
+    city: lead.gmaps_city,
+    category: lead.gmaps_category,
+    website_url: lead.website_url,
+    pain_audit: lead.pain_audit,
+    enrichment_summary: lead.enrichment_summary,
+    offer_track: track,
+    verified_signals: verified,
+  };
+
   const text = await callClaude({
-    system: pickColdOutreachSystem(track),
-    user: coldOutreachUserPrompt({
-      company_name: lead.company_name,
-      contact_name: lead.contact_name,
-      niche: (lead.niche as ProspectingNiche) ?? null,
-      city: lead.gmaps_city,
-      category: lead.gmaps_category,
-      website_url: lead.website_url,
-      pain_audit: lead.pain_audit,
-      enrichment_summary: lead.enrichment_summary,
-      offer_track: track,
-      verified_signals: verified,
-    }),
-    maxTokens: 1400,
+    system: isFollowup ? COLD_FOLLOWUP_SYSTEM : pickColdOutreachSystem(track),
+    user: isFollowup
+      ? coldFollowupUserPrompt({ ...promptInput, touch_number: touchNumber })
+      : coldOutreachUserPrompt(promptInput),
+    maxTokens: isFollowup ? 800 : 1400,
   });
 
   const result = extractJsonWithSchema(text, ColdOutreachSchema);
@@ -83,7 +100,8 @@ export async function generateDraftPayload(
     visual_urls: [],
     visual_concept: result.visual_concept,
     spintax_variant: rendered.spintax_variant,
-    touch_number: 1,
+    touch_number: touchNumber,
+    sequence_id: opts.sequenceId ?? null,
     status: "draft",
     ai_meta: {
       primary_pain_point_used: result.primary_pain_point_used,

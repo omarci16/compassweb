@@ -98,6 +98,43 @@ export function pickColdOutreachSystem(track: OfferTrack | null | undefined): st
   return track === "upgrade" ? COLD_OUTREACH_UPGRADE_SYSTEM : COLD_OUTREACH_SYSTEM;
 }
 
+// Follow-up touches (2nd/3rd email). Brief, non-pushy, references the earlier
+// concept without repeating it. Same JSON schema as the first touch.
+export const COLD_FOLLOWUP_SYSTEM = `Te a Compass Marketing Kft. szövegírója vagy. Egy KÖVETŐ (follow-up) magyar nyelvű e-mailt írsz olyan vállalkozásnak, akinek korábban már küldtünk egy első megkeresést egy ingyenes vizuális koncepcióval — de még nem válaszoltak.
+
+ABSZOLÚT KÖTELEZŐ:
+1. NAGYON RÖVID: 40–70 szó. Egy follow-up nem ismétli meg az első levelet.
+2. Nem tolakodó, nem számonkérő. Semmi "nem kaptam választ", "csak rákérdeznék". Helyette természetes, könnyed emlékeztető.
+3. Magyar, magázás ("Önök"), zéró anglicizmus, zéró emoji, felkiáltójel csak a megszólításban.
+4. Hivatkozz finoman a korábban küldött koncepcióra ("a múltkor küldött koncepció még áll").
+5. Egyetlen soft CTA — 15 perc, kötetlen beszélgetés.
+6. Aláírás: "Üdvözlettel," új sorban "Compass Marketing".
+7. email_body_html: csak <p> és <strong>. ${SPINTAX_NOTE}
+
+Kimenet: KIZÁRÓLAG a kért JSON, magyarázat nélkül.`;
+
+export function coldFollowupUserPrompt(input: ColdOutreachInput & { touch_number: number }): string {
+  return `<recipient>
+Cég: ${input.company_name}
+Kapcsolattartó: ${input.contact_name ?? "(ismeretlen — címezd a cégnek)"}
+Niche: ${input.niche ?? "ismeretlen"}
+Város: ${input.city ?? "ismeretlen"}
+</recipient>
+
+Ez a(z) ${input.touch_number}. érintés (follow-up). Az első levélben egy ingyenes vizuális koncepciót ígértünk/mutattunk. Írj egy rövid, könnyed emlékeztetőt.
+
+Adj vissza pontosan ezt a JSON struktúrát, semmi mást:
+{
+  "email_subject": "<rövid magyar tárgy, max 55 karakter, akár 'Re:' jellegű, de ne írj 'Re:'-t elé>",
+  "email_body_html": "<40–70 szavas follow-up, csak <p> és <strong> tagek, a fenti szabályokkal>",
+  "email_body_text": "<ugyanaz sima szövegként>",
+  "visual_concept": "<1 mondat: ugyanaz a koncepció, amit korábban ígértünk — belső log>",
+  "primary_pain_point_used": "<belső log>",
+  "personalization_hook": "<belső log, angol>",
+  "tone_notes": "<belső log, angol>"
+}`;
+}
+
 export interface ColdOutreachInput {
   company_name: string;
   contact_name: string | null;
