@@ -523,6 +523,140 @@ export async function getOutreachDrafts(opts?: {
 }
 
 // ---------------------------------------------------------------------
+// Outbound control tower (Scraping 2.1, Phase G)
+// ---------------------------------------------------------------------
+
+export interface OutboundTarget {
+  id: string;
+  company_name: string;
+  win_probability: number | null;
+  offer_track: OfferTrack | null;
+  city: string | null;
+}
+
+export interface OutboundStats {
+  drafts_pending: number;
+  drafts_approved: number;
+  by_track: { needs_site: number; upgrade: number; low_priority: number };
+  sent_today: number;
+  opened_today: number;
+  replied_today: number;
+  bounced_today: number;
+  suppressed_total: number;
+  top_targets: OutboundTarget[];
+}
+
+const EMPTY_OUTBOUND: OutboundStats = {
+  drafts_pending: 0,
+  drafts_approved: 0,
+  by_track: { needs_site: 0, upgrade: 0, low_priority: 0 },
+  sent_today: 0,
+  opened_today: 0,
+  replied_today: 0,
+  bounced_today: 0,
+  suppressed_total: 0,
+  top_targets: [],
+};
+
+function startOfTodayIso(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+export async function getOutboundStats(): Promise<OutboundStats> {
+  if (!isSupabaseConfigured()) {
+    const pending = demoOutreachDrafts.filter((d) => d.status === "draft").length;
+    const approved = demoOutreachDrafts.filter((d) => d.status === "approved").length;
+    const targets = demoLeads
+      .filter((l) => l.source === "cold_outreach" && !l.first_contact_at)
+      .slice(0, 6)
+      .map((l) => ({
+        id: l.id,
+        company_name: l.company_name,
+        win_probability: l.win_probability,
+        offer_track: l.offer_track,
+        city: l.gmaps_city,
+      }));
+    return { ...EMPTY_OUTBOUND, drafts_pending: pending, drafts_approved: approved, top_targets: targets };
+  }
+
+  const supabase = createClient();
+  const today = startOfTodayIso();
+  const headCount = "id";
+
+  const [
+    draftsPending,
+    draftsApproved,
+    sentToday,
+    openedToday,
+    bouncedToday,
+    repliedToday,
+    suppressed,
+    uncontacted,
+  ] = await Promise.all([
+    supabase.from("outreach_drafts").select(headCount, { count: "exact", head: true }).eq("status", "draft"),
+    supabase.from("outreach_drafts").select(headCount, { count: "exact", head: true }).eq("status", "approved"),
+    supabase.from("outreach_sends").select(headCount, { count: "exact", head: true }).gte("sent_at", today),
+    supabase.from("outreach_sends").select(headCount, { count: "exact", head: true }).gte("opened_at", today),
+    supabase.from("outreach_sends").select(headCount, { count: "exact", head: true }).gte("bounced_at", today),
+    supabase
+      .from("email_log")
+      .select(headCount, { count: "exact", head: true })
+      .eq("direction", "inbound")
+      .gte("created_at", today),
+    supabase.from("suppression_list").select(headCount, { count: "exact", head: true }),
+    supabase
+      .from("leads")
+      .select("id, company_name, win_probability, offer_track, gmaps_city, email_status")
+      .eq("source", "cold_outreach")
+      .is("first_contact_at", null)
+      .not("offer_track", "is", null)
+      .neq("email_status", "invalid")
+      .order("win_probability", { ascending: false, nullsFirst: false })
+      .limit(200),
+  ]);
+
+  const uncontactedRows = (uncontacted.data ?? []) as {
+    id: string;
+    company_name: string;
+    win_probability: number | null;
+    offer_track: string | null;
+    gmaps_city: string | null;
+  }[];
+
+  const by_track = { needs_site: 0, upgrade: 0, low_priority: 0 };
+  for (const r of uncontactedRows) {
+    if (r.offer_track === "needs_site") by_track.needs_site += 1;
+    else if (r.offer_track === "upgrade") by_track.upgrade += 1;
+    else if (r.offer_track === "low_priority") by_track.low_priority += 1;
+  }
+
+  const top_targets: OutboundTarget[] = uncontactedRows
+    .filter((r) => r.offer_track === "needs_site" || r.offer_track === "upgrade")
+    .slice(0, 6)
+    .map((r) => ({
+      id: r.id,
+      company_name: r.company_name,
+      win_probability: r.win_probability,
+      offer_track: (r.offer_track as OfferTrack | null) ?? null,
+      city: r.gmaps_city,
+    }));
+
+  return {
+    drafts_pending: draftsPending.count ?? 0,
+    drafts_approved: draftsApproved.count ?? 0,
+    by_track,
+    sent_today: sentToday.count ?? 0,
+    opened_today: openedToday.count ?? 0,
+    replied_today: repliedToday.count ?? 0,
+    bounced_today: bouncedToday.count ?? 0,
+    suppressed_total: suppressed.count ?? 0,
+    top_targets,
+  };
+}
+
+// ---------------------------------------------------------------------
 // Insights / analytics for the Intelligence page
 // ---------------------------------------------------------------------
 
@@ -625,15 +759,45 @@ export async function getInsights(): Promise<Insights> {
 // at every page load.)
 // ---------------------------------------------------------------------
 
-export async function computeBriefing(firstName = "Richárd"): Promise<DailyBriefing> {
-  const [leads, projects, invoices] = await Promise.all([
+export async function computeBriefing(
+  firstName = "Richárd",
+  outbound?: OutboundStats,
+): Promise<DailyBriefing> {
+  const [leads, projects, invoices, outboundStats] = await Promise.all([
     getLeads({ limit: 200 }),
     getProjects({ activeOnly: true }),
     getInvoices(),
+    outbound ? Promise.resolve(outbound) : getOutboundStats(),
   ]);
 
   const now = Date.now();
   const items: DailyBriefingItem[] = [];
+
+  // 0. Outbound machine — drafts to approve, approved to send, bounces to watch.
+  if (outboundStats.drafts_pending > 0) {
+    items.push({
+      severity: "action",
+      title: `${outboundStats.drafts_pending} outreach piszkozat jóváhagyásra vár`,
+      detail: "Nyisd meg a jóváhagyási sort — semmi nem megy ki jóváhagyás nélkül.",
+      href: "/outreach",
+    });
+  }
+  if (outboundStats.drafts_approved > 0) {
+    items.push({
+      severity: "action",
+      title: `${outboundStats.drafts_approved} jóváhagyott levél küldésre kész`,
+      detail: "Indítsd el a küldést — rotált postafiókokból, napi limittel megy ki.",
+      href: "/outreach",
+    });
+  }
+  if (outboundStats.bounced_today > 0) {
+    items.push({
+      severity: "info",
+      title: `${outboundStats.bounced_today} bounce ma`,
+      detail: "A bounce-oló címek automatikusan a suppression listára kerültek.",
+      href: "/outreach",
+    });
+  }
 
   // 1. Urgent projects: revision deadline past, or stuck >7d on us
   const revisionPastDue = projects.filter(
