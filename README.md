@@ -12,10 +12,34 @@ client portal. Built per [`CLAUDE.md`](./CLAUDE.md).
 - Anthropic Claude (`claude-sonnet-5`) for all AI
 - Apify Website Content Crawler for lead enrichment
 - Google PageSpeed Insights for site verification (HTTPS / viewport / performance / screenshot)
-- Resend for outbound email
+- Resend for outbound email (+ rotated inboxes, suppression, unsubscribe, webhooks)
 - Inngest for background jobs
 - React Query + Zustand, dnd-kit for kanban, Tiptap for proposals, Recharts
 - Vitest for scoring + stage-gate tests
+
+## Lead Scraping 2.0 / 2.1 — the outbound machine
+
+The prospecting pipeline (Google Maps → verify → score) plus a full cold-outreach
+sending stack, built on **free tools only**:
+
+- **Targeting**: 6 verticals (beauty, fitness, dental, real estate, **legal**,
+  **hospitality**) × cities, launched one-off or via a **batch launcher**.
+- **Contactability**: free in-code email verification (syntax + DNS MX +
+  disposable/role) gates bounces before they touch the sending domain.
+- **Offer routing**: every lead is routed to `needs_site` / `upgrade` /
+  `low_priority`; the AI writes a track-specific pitch, `upgrade` grounded only
+  in *verified* signals.
+- **Approval queue**: AI drafts land in `outreach_drafts` (status `draft`); a
+  human approves every send — nothing auto-sends (CLAUDE.md rule #1).
+- **Sending**: rotated inboxes with per-inbox daily caps + warmup ramp, 3–7 min
+  spacing, one-click unsubscribe + suppression list, Resend delivery webhooks.
+  Immutable record → `email_log`; mutable lifecycle → `outreach_sends`.
+- **Follow-ups**: up to 2 nudges, each AI-drafted into the queue, auto-stopped on
+  reply / unsubscribe / bounce.
+- **Control tower**: the dashboard home surfaces drafts to approve, today's
+  sent/opened/replied/bounced, top targets, and the next 3 actions.
+
+Going live is a copy-paste tutorial: **[`GO-LIVE-2.1.md`](./GO-LIVE-2.1.md)**.
 
 ## Setup
 
@@ -30,6 +54,29 @@ pnpm dev
 The app runs in **demo mode** when `NEXT_PUBLIC_SUPABASE_URL` is unset — every
 page is browseable with the in-memory dataset in `lib/data/demo.ts`. Set the
 env vars to switch to real persistence.
+
+### Environment variables
+
+See [`.env.local.example`](./.env.local.example) for the full list. Scraping 2.1
+adds:
+
+| Var | Required? | Purpose |
+| --- | --- | --- |
+| `RESEND_WEBHOOK_SECRET` | for delivery tracking | Verifies `/api/webhooks/resend` (opens/bounces/complaints). |
+| `SENDING_INBOXES` | optional | Comma-separated `address[:From Name]` to rotate cold sends across. Falls back to the `sending_inboxes` table, then `RESEND_FROM_EMAIL`. |
+| `SENDING_DAILY_CAP` | optional | Per-inbox daily cap before warmup ramp (default 30). |
+| `UNSUBSCRIBE_SECRET` | optional | Signs unsubscribe tokens; falls back to `INNGEST_SIGNING_KEY`. |
+| `META_AD_LIBRARY_TOKEN` | optional | Ads buying-signal; no-ops cleanly if unset. |
+
+### Zero-ops (no manual Inngest resync / SQL paste)
+
+- **Inngest ↔ Vercel Marketplace integration** auto-syncs the functions in
+  `app/api/webhooks/inngest` on every deploy.
+- **Supabase ↔ GitHub integration** auto-runs `supabase/migrations/*.sql` on
+  merge to production (see `supabase/config.toml`).
+
+Both are one-time dashboard setups — the exact clicks are in
+[`GO-LIVE-2.1.md`](./GO-LIVE-2.1.md).
 
 ## Tests
 
