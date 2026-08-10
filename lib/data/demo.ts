@@ -77,6 +77,9 @@ export const demoLeads: Lead[] = [
     ads_signal: null,
     recently_opened: false,
     offer_track: null,
+    discovered_emails: null,
+    discovered_phones: null,
+    contact_source: null,
   },
   {
     id: "lead-2",
@@ -139,6 +142,9 @@ export const demoLeads: Lead[] = [
     ads_signal: null,
     recently_opened: false,
     offer_track: null,
+    discovered_emails: null,
+    discovered_phones: null,
+    contact_source: null,
   },
   {
     id: "lead-3",
@@ -200,6 +206,9 @@ export const demoLeads: Lead[] = [
     ads_signal: null,
     recently_opened: false,
     offer_track: null,
+    discovered_emails: null,
+    discovered_phones: null,
+    contact_source: null,
   },
   {
     id: "lead-4",
@@ -243,7 +252,8 @@ export const demoLeads: Lead[] = [
     gmaps_review_count: null,
     gmaps_phone: null,
     gmaps_url: null,
-    social_links: null,
+    // Harvested from the site's own HTML (Phase I) — Google Maps had no email.
+    social_links: { facebook: "https://www.facebook.com/horvathoptika" },
     website_health_status: null,
     website_health_checked_at: null,
     website_health_details: null,
@@ -254,12 +264,30 @@ export const demoLeads: Lead[] = [
     website_screenshot_url: null,
     website_verified_at: null,
     website_verification: null,
-    email_status: null,
-    email_verified: false,
-    email_checked_at: null,
+    email_status: "valid",
+    email_verified: true,
+    email_checked_at: daysAgo(2),
     ads_signal: null,
     recently_opened: false,
     offer_track: null,
+    discovered_emails: [
+      {
+        email: "info@horvathoptika.hu",
+        rank: 130,
+        kind: "role",
+        own_domain: true,
+        from_mailto: true,
+      },
+      {
+        email: "horvath.laszlo@horvathoptika.hu",
+        rank: 135,
+        kind: "personal",
+        own_domain: true,
+        from_mailto: false,
+      },
+    ],
+    discovered_phones: ["+36 1 234 5678"],
+    contact_source: "website",
   },
 ];
 
@@ -627,6 +655,9 @@ const histLead = (
   ads_signal: null,
   recently_opened: false,
   offer_track: null,
+  discovered_emails: null,
+  discovered_phones: null,
+  contact_source: null,
 });
 
 const historicalLeads: Lead[] = [

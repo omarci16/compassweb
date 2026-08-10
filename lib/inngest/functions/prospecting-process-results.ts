@@ -3,9 +3,12 @@
 //   2. Normalises into LeadCandidate shape
 //   3. Dedupes against existing leads (gmaps_place_id, phone, website)
 //   4. Probes website health in parallel for each candidate
-//   5. Computes cold-lead score
-//   6. Inserts as `leads` rows (source='cold_outreach', status='new')
-//   7. Updates scraping_job metrics
+//   5. Harvests contacts from the HTML that probe already downloaded, and
+//      promotes the best discovered email when Maps gave us none (Phase I)
+//   6. Verifies whichever email we ended up with (syntax + MX)
+//   7. Computes cold-lead score
+//   8. Inserts as `leads` rows (source='cold_outreach', status='new')
+//   9. Updates scraping_job metrics
 //
 // Idempotent: re-running on the same job will skip rows already imported,
 // thanks to the unique index on leads.gmaps_place_id.
@@ -20,6 +23,7 @@ import {
 import { analyzeMany } from "@/lib/prospecting/site-analyzer";
 import { normalizeWebsiteHost } from "@/lib/prospecting/normalize";
 import { verifyManyEmails } from "@/lib/prospecting/email-verify";
+import { bestEmail, mergeContacts } from "@/lib/prospecting/contact-extract";
 import { deriveOfferTrack, isRecentlyOpened } from "@/lib/prospecting/offer-track";
 import {
   HIGH_THRESHOLD,
@@ -134,11 +138,34 @@ export const prospectingProcessResults = inngest.createFunction(
       return analyzeMany(urls, 6);
     });
 
+    // ----- Contact harvesting (Phase I) -----
+    // The probe above already downloaded each homepage; `analysis.contacts` is
+    // what was in it. Google Maps frequently has no email, so promote the
+    // best-ranked discovered address — BEFORE verification below, so the
+    // promoted address gets MX-checked in the same pass rather than shipping
+    // unverified. Aligned to `novel` by index.
+    const contactPromotions = novel.map((c, idx) => {
+      const found = analyses[idx]?.contacts ?? null;
+      const promoted = c.email ? null : bestEmail(found);
+      return {
+        email: c.email ?? promoted,
+        contact_source: c.email ? ("gmaps" as const) : promoted ? ("website" as const) : null,
+        discovered_emails: found?.emails.length ? found.emails : null,
+        discovered_phones: found?.phones.length ? found.phones : null,
+        // Merge harvested profiles over the Maps ones (Maps wins ties), so
+        // social_links_count in the scorer sees everything we know.
+        social_links: mergeContacts(
+          { emails: [], phones: [], socials: c.social_links },
+          found,
+        ).socials,
+      };
+    });
+
     // ----- Free email verification (syntax + MX + disposable/role) -----
     // Gates hard bounces before they can touch the sending domain. Aligned to
     // `novel` by index.
     const emailChecks = await step.run("verify-emails", async () => {
-      return verifyManyEmails(novel.map((c) => c.email), 8);
+      return verifyManyEmails(contactPromotions.map((p) => p.email), 8);
     });
 
     // Historical niche win rates (deterministic scorer input) — computed once
@@ -166,11 +193,13 @@ export const prospectingProcessResults = inngest.createFunction(
       const batchAnalyses = analyses.slice(i, i + BATCH_SIZE);
 
       const batchEmailChecks = emailChecks.slice(i, i + BATCH_SIZE);
+      const batchContacts = contactPromotions.slice(i, i + BATCH_SIZE);
 
       const stepResult = await step.run(`insert-batch-${i}`, async () => {
         const rows = batch.map((c, idx) => {
           const analysis = batchAnalyses[idx];
           const emailCheck = batchEmailChecks[idx];
+          const contact = batchContacts[idx];
           const recentlyOpened = isRecentlyOpened(c.gmaps_rating, c.gmaps_review_count);
           const score = scoreColdLead({
             niche: c.niche,
@@ -178,8 +207,8 @@ export const prospectingProcessResults = inngest.createFunction(
             gmaps_review_count: c.gmaps_review_count,
             website_url: c.website_url,
             website_health: analysis.health_status,
-            social_links_count: Object.keys(c.social_links).length,
-            has_email: !!c.email,
+            social_links_count: Object.keys(contact.social_links).length,
+            has_email: !!contact.email,
             has_phone: !!c.gmaps_phone,
             pain_signals: analysis.pain_signals,
             historical_niche_win_rates: nicheWinRates,
@@ -194,8 +223,8 @@ export const prospectingProcessResults = inngest.createFunction(
           });
           return {
             company_name: c.company_name,
-            email: c.email,
-            phone: c.gmaps_phone,
+            email: contact.email,
+            phone: c.gmaps_phone ?? contact.discovered_phones?.[0] ?? null,
             website_url: c.website_url,
             source: "cold_outreach" as const,
             niche: c.niche,
@@ -209,7 +238,7 @@ export const prospectingProcessResults = inngest.createFunction(
             gmaps_review_count: c.gmaps_review_count,
             gmaps_phone: c.gmaps_phone,
             gmaps_url: c.gmaps_url,
-            social_links: c.social_links,
+            social_links: contact.social_links,
             has_existing_website: !!c.website_url,
             website_health_status: analysis.health_status,
             website_health_checked_at: new Date().toISOString(),
@@ -224,6 +253,9 @@ export const prospectingProcessResults = inngest.createFunction(
             email_checked_at: emailCheck ? new Date().toISOString() : null,
             recently_opened: recentlyOpened,
             offer_track: offerTrack,
+            discovered_emails: contact.discovered_emails,
+            discovered_phones: contact.discovered_phones,
+            contact_source: contact.contact_source,
           };
         });
 

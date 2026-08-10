@@ -118,6 +118,10 @@ export type LeadRow = {
   ads_signal: Json | null;
   recently_opened: boolean;
   offer_track: string | null;
+  // Contact harvesting (added in 0012_contact_harvest.sql)
+  discovered_emails: Json | null;
+  discovered_phones: Json | null;
+  contact_source: string | null;
 };
 
 export type DealRow = {

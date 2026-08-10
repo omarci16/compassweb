@@ -115,6 +115,12 @@ export type EmailStatus = "valid" | "risky" | "invalid" | "unknown";
 //   low_priority — healthy, strong, no hook / unverifiable: don't spend a touch yet
 export type OfferTrack = "needs_site" | "upgrade" | "low_priority";
 
+// Provenance of leads.email (Phase I, contact harvesting).
+//   gmaps   — Google Maps supplied it during discovery
+//   website — harvested from HTML we had already downloaded
+//   manual  — a human typed it in
+export type ContactSource = "gmaps" | "website" | "manual";
+
 // Buying signal: does the business currently run paid ads? (Meta Ad Library.)
 export type AdsSignal = {
   runs_ads: boolean;
@@ -316,6 +322,7 @@ export type Lead = Omit<
   | "package_interest"
   | "email_status"
   | "offer_track"
+  | "contact_source"
 > & {
   source: LeadSource;
   status: LeadStatus;
@@ -324,6 +331,7 @@ export type Lead = Omit<
   package_interest: Package | null;
   email_status: EmailStatus | null;
   offer_track: OfferTrack | null;
+  contact_source: ContactSource | null;
 };
 
 export type Deal = Omit<DealRow, "stage" | "proposed_package"> & {

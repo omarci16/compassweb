@@ -25,6 +25,11 @@ import type {
   WebsiteHealthDetails,
   WebsiteHealthStatus,
 } from "@/lib/types/app.types";
+import {
+  extractContacts,
+  socialFromUrl,
+  type ExtractedContacts,
+} from "./contact-extract";
 
 const PROBE_TIMEOUT_MS = 9000;
 const RETRY_TIMEOUT_MS = 12000;
@@ -47,6 +52,13 @@ export interface SiteAnalysis {
   health_details: WebsiteHealthDetails;
   tech_stack: TechStack | null;
   pain_signals: PainSignal[];
+  /**
+   * Contacts mined from the HTML this probe already downloaded — free, no
+   * extra request. Null whenever we never saw a real page (no URL, blocked,
+   * unreachable, error page), so "no contacts found" is never confused with
+   * "we never looked".
+   */
+  contacts: ExtractedContacts | null;
 }
 
 const EMPTY_TECH_STACK: TechStack = {
@@ -464,6 +476,7 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
           confidence: "verified",
         },
       ],
+      contacts: null,
     };
   }
 
@@ -477,6 +490,7 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
       health_details: { reason: "Invalid URL", requested_url: rawUrl },
       tech_stack: null,
       pain_signals: [],
+      contacts: null,
     };
   }
 
@@ -495,6 +509,9 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
           confidence: "verified",
         },
       ],
+      // The listed "website" IS the social profile — record it as a DM channel
+      // rather than losing it, since these leads have no site to email about.
+      contacts: { emails: [], phones: [], socials: socialFromUrl(parsed.toString()) },
     };
   }
 
@@ -512,6 +529,7 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
       },
       tech_stack: null,
       pain_signals: [],
+      contacts: null,
     };
   }
 
@@ -555,6 +573,8 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
             },
           },
         ],
+        // Redirected to a social page — keep the profile as a DM channel.
+        contacts: { emails: [], phones: [], socials: socialFromUrl(finalUrl) },
       };
     }
   } catch {
@@ -568,6 +588,7 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
       health_details: { ...baseDetails, reason: `Blocked / challenge (HTTP ${res.status})` },
       tech_stack: null,
       pain_signals: [],
+      contacts: null,
     };
   }
 
@@ -594,6 +615,8 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
           },
         },
       ],
+      // An error page's contents are not the business's contact details.
+      contacts: null,
     };
   }
 
@@ -634,6 +657,9 @@ export async function analyzeSite(rawUrl: string | null | undefined): Promise<Si
     health_details: { ...baseDetails, last_modified: lastModifiedHeader ?? undefined },
     tech_stack: tech,
     pain_signals: pains,
+    // Free: this HTML is already in memory. `finalUrl` (post-redirect) is what
+    // decides "own domain", so the ranking follows the site we actually read.
+    contacts: extractContacts(html, finalUrl),
   };
 }
 
