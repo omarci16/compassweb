@@ -24,8 +24,14 @@ sending stack, built on **free tools only**:
 
 - **Targeting**: 6 verticals (beauty, fitness, dental, real estate, **legal**,
   **hospitality**) × cities, launched one-off or via a **batch launcher**.
-- **Contactability**: free in-code email verification (syntax + DNS MX +
-  disposable/role) gates bounces before they touch the sending domain.
+- **Contactability**: contacts are harvested from HTML the pipeline already
+  downloads (the static probe, plus the rendered crawl) — emails ranked
+  own-domain-personal first, phones normalised to +36, and social profiles kept
+  as a DM channel for leads with no usable email. Free in-code email
+  verification (syntax + DNS MX + disposable/role) then gates bounces before
+  they touch the sending domain. No AI in this path: an invented address costs
+  real bounces. The prospecting dashboard tracks the contactability rate and how
+  many addresses harvesting added on top of Google Maps.
 - **Offer routing**: every lead is routed to `needs_site` / `upgrade` /
   `low_priority`; the AI writes a track-specific pitch, `upgrade` grounded only
   in *verified* signals.

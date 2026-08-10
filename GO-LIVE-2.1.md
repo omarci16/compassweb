@@ -47,7 +47,7 @@ Namecheap, Rackhost, Cloudflare). ~30 minutes, one time.
 > If you prefer to run this batch's migrations by hand once instead, open
 > **Supabase → SQL Editor** and run these files in order:
 > `0008_scraping_2_1.sql`, `0009_outreach_drafts.sql`, `0010_outreach_sending.sql`,
-> `0011_cold_followups.sql`.
+> `0011_cold_followups.sql`, `0012_contact_harvest.sql`.
 
 ---
 
