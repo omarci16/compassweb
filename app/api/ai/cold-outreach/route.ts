@@ -4,23 +4,15 @@ import { createServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/data/queries";
 import { callClaude, extractJsonWithSchema } from "@/lib/ai/anthropic";
 import {
-  COLD_OUTREACH_SYSTEM,
+  ColdOutreachSchema,
   coldOutreachUserPrompt,
+  pickColdOutreachSystem,
 } from "@/lib/ai/prompts/cold-outreach";
-import type { ProspectingNiche } from "@/lib/types/app.types";
+import { renderDraftBody, verifiedSignalLabels } from "@/lib/outreach/draft-content";
+import type { OfferTrack, PainSignal, ProspectingNiche } from "@/lib/types/app.types";
 
 const Input = z.object({
   lead_id: z.string().uuid(),
-});
-
-const ColdOutreachSchema = z.object({
-  email_subject: z.string(),
-  email_body_html: z.string(),
-  email_body_text: z.string(),
-  visual_concept: z.string(),
-  primary_pain_point_used: z.string(),
-  personalization_hook: z.string(),
-  tone_notes: z.string(),
 });
 
 export async function POST(req: Request) {
@@ -63,7 +55,7 @@ export async function POST(req: Request) {
   const { data: lead, error } = await supabase
     .from("leads")
     .select(
-      "id, company_name, contact_name, niche, gmaps_city, gmaps_category, website_url, pain_audit, enrichment_summary",
+      "id, company_name, contact_name, niche, gmaps_city, gmaps_category, website_url, pain_audit, enrichment_summary, offer_track, pain_signals",
     )
     .eq("id", lead_id)
     .single();
@@ -79,9 +71,14 @@ export async function POST(req: Request) {
     );
   }
 
+  const track = (lead.offer_track as OfferTrack | null) ?? "needs_site";
+  const verified = verifiedSignalLabels(
+    Array.isArray(lead.pain_signals) ? (lead.pain_signals as unknown as PainSignal[]) : [],
+  );
+
   try {
     const text = await callClaude({
-      system: COLD_OUTREACH_SYSTEM,
+      system: pickColdOutreachSystem(track),
       user: coldOutreachUserPrompt({
         company_name: lead.company_name,
         contact_name: lead.contact_name,
@@ -91,12 +88,24 @@ export async function POST(req: Request) {
         website_url: lead.website_url,
         pain_audit: lead.pain_audit,
         enrichment_summary: lead.enrichment_summary,
+        offer_track: track,
+        verified_signals: verified,
       }),
       maxTokens: 1400,
     });
 
     const result = extractJsonWithSchema(text, ColdOutreachSchema);
-    return NextResponse.json({ ok: true, result });
+    // Expand spintax so the reviewer sees final copy, not {a|b} markup.
+    const rendered = renderDraftBody(result.email_body_html, result.email_body_text);
+    return NextResponse.json({
+      ok: true,
+      result: {
+        ...result,
+        email_body_html: rendered.body_html,
+        email_body_text: rendered.body_text,
+      },
+      offer_track: track,
+    });
   } catch (err) {
     console.error("cold outreach drafting failed", err);
     return NextResponse.json(

@@ -6,6 +6,9 @@ import {
   monthlyRetainerInvoice,
   materialsDeadlineReminder,
   projectMaterialsOverdue,
+  outreachGenerateDrafts,
+  outreachSendQueue,
+  outreachSequenceTick,
   prospectingBackfillReverify,
   prospectingProcessResults,
   prospectingRunScrape,
@@ -34,5 +37,8 @@ export const { GET, POST, PUT } = serve({
     generatePainAudit,
     verifyWebsite,
     prospectingBackfillReverify,
+    outreachGenerateDrafts,
+    outreachSendQueue,
+    outreachSequenceTick,
   ],
 });

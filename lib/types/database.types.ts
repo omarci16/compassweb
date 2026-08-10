@@ -35,6 +35,10 @@ export type Database = {
       templates: TableDef<TemplateRow>;
       users_profile: TableDef<UserProfileRow>;
       scraping_jobs: TableDef<ScrapingJobRow>;
+      outreach_drafts: TableDef<OutreachDraftRow>;
+      outreach_sends: TableDef<OutreachSendRow>;
+      suppression_list: TableDef<SuppressionRow>;
+      sending_inboxes: TableDef<SendingInboxRow>;
     };
     Views: {
       [key: string]: {
@@ -106,6 +110,18 @@ export type LeadRow = {
   website_screenshot_url: string | null;
   website_verified_at: string | null;
   website_verification: Json | null;
+  // Email verification (added in 0008_scraping_2_1.sql)
+  email_status: string | null;
+  email_verified: boolean;
+  email_checked_at: string | null;
+  // Buying signals & offer routing (added in 0008_scraping_2_1.sql)
+  ads_signal: Json | null;
+  recently_opened: boolean;
+  offer_track: string | null;
+  // Contact harvesting (added in 0012_contact_harvest.sql)
+  discovered_emails: Json | null;
+  discovered_phones: Json | null;
+  contact_source: string | null;
 };
 
 export type DealRow = {
@@ -241,6 +257,8 @@ export type ReEngagementRow = {
   touch_count: number;
   last_touch_at: string | null;
   last_touch_type: string | null;
+  // 're_engagement' | 'cold_followup' (added in 0011_cold_followups.sql)
+  kind: string;
 };
 
 export type TemplateRow = {
@@ -287,4 +305,68 @@ export type ScrapingJobRow = {
   estimated_cost_usd: number | null;
   triggered_by: string | null;
   notes: string | null;
+  // Directory sources (added in 0013_directory_sources.sql)
+  source_type: string;
+  source_key: string | null;
+};
+
+// Outreach machine (Scraping 2.1) — see 0009_outreach_drafts.sql + 0010_outreach_sending.sql.
+
+export type OutreachDraftRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  lead_id: string;
+  track: string;
+  subject: string;
+  body_html: string;
+  body_text: string;
+  visual_urls: Json | null;
+  visual_concept: string | null;
+  sequence_id: string | null;
+  touch_number: number;
+  spintax_variant: string | null;
+  status: string;
+  approved_at: string | null;
+  approved_by: string | null;
+  ai_meta: Json | null;
+};
+
+export type OutreachSendRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  draft_id: string | null;
+  lead_id: string | null;
+  inbox: string | null;
+  resend_message_id: string | null;
+  status: string;
+  to_address: string;
+  sent_at: string | null;
+  opened_at: string | null;
+  clicked_at: string | null;
+  bounced_at: string | null;
+  complained_at: string | null;
+  unsubscribed_at: string | null;
+  error_message: string | null;
+};
+
+export type SuppressionRow = {
+  id: string;
+  created_at: string;
+  email: string | null;
+  domain: string | null;
+  reason: string;
+  notes: string | null;
+};
+
+export type SendingInboxRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  address: string;
+  from_name: string | null;
+  daily_cap: number;
+  warmup_started_at: string | null;
+  active: boolean;
 };

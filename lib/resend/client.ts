@@ -14,12 +14,24 @@ export function getResend(): Resend {
 
 export const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "info@compassmarketing.hu";
 
+/**
+ * Where replies should land. Cold outreach sends from a separate, warmed
+ * domain that has no mailbox behind it — without this, a prospect who hits
+ * Reply gets a bounce and we never learn they were interested. Set it to a
+ * monitored inbox and replies come back to the normal one.
+ */
+export const REPLY_TO_EMAIL = process.env.REPLY_TO_EMAIL || undefined;
+
 export interface SendEmailInput {
   to: string;
   subject: string;
   html?: string;
   text?: string;
   replyTo?: string;
+  /** Override sender for inbox rotation (Scraping 2.1). Defaults to FROM_EMAIL. */
+  from?: string;
+  /** Extra headers, e.g. List-Unsubscribe / List-Unsubscribe-Post (RFC 8058). */
+  headers?: Record<string, string>;
 }
 
 export async function sendEmail(input: SendEmailInput) {
@@ -29,10 +41,11 @@ export async function sendEmail(input: SendEmailInput) {
   const html = input.html;
   const text = input.text ?? (html ? undefined : input.subject);
   return resend.emails.send({
-    from: FROM_EMAIL,
+    from: input.from ?? FROM_EMAIL,
     to: input.to,
     subject: input.subject,
     ...(html ? { html } : { text: text! }),
-    replyTo: input.replyTo,
+    replyTo: input.replyTo ?? REPLY_TO_EMAIL,
+    ...(input.headers ? { headers: input.headers } : {}),
   });
 }

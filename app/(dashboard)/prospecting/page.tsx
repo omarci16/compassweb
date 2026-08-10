@@ -6,9 +6,21 @@ import {
 } from "@/lib/data/queries";
 import { Stat } from "@/components/shared/Stat";
 import { ScrapeLauncher } from "@/components/prospecting/ScrapeLauncher";
+import { BatchLauncher } from "@/components/prospecting/BatchLauncher";
+import { DirectoryLauncher } from "@/components/prospecting/DirectoryLauncher";
 import { ScrapingJobsList } from "@/components/prospecting/ScrapingJobsList";
 import { SourceEffectiveness } from "@/components/prospecting/SourceEffectiveness";
-import { Target, Flame, Calendar, DollarSign } from "lucide-react";
+import {
+  Target,
+  Flame,
+  Calendar,
+  DollarSign,
+  AtSign,
+  Globe,
+  MessageCircle,
+  Slash,
+} from "lucide-react";
+import { contactabilityStats } from "@/lib/prospecting/contactability";
 import { PROSPECTING_NICHE_LABELS } from "@/lib/types/app.types";
 import { LeadScoreBadge } from "@/components/leads/LeadScoreBadge";
 import Link from "next/link";
@@ -23,6 +35,10 @@ export default async function ProspectingPage() {
     getLeads({ limit: 500 }),
     getSourceEffectiveness(),
   ]);
+
+  // Contactability is measured over cold-sourced leads only — the inbound ones
+  // always have an email, so including them would flatter the number.
+  const reach = contactabilityStats(allLeads.filter((l) => l.source === "cold_outreach"));
 
   // Top finds: cold-sourced leads with high scores that haven't been contacted
   const topFinds = allLeads
@@ -72,10 +88,62 @@ export default async function ProspectingPage() {
         />
       </div>
 
+      {/* Contactability — the funnel stage that decides whether the rest matters */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Elérhetőség
+        </h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Stat
+            label="Elérhető hideg lead"
+            value={`${reach.rate}%`}
+            icon={AtSign}
+            tone={reach.rate >= 60 ? "positive" : undefined}
+            hint={`${reach.reachable.toLocaleString("hu-HU")} / ${reach.total.toLocaleString("hu-HU")} lead`}
+          />
+          <Stat
+            label="Weboldalról nyert cím"
+            value={reach.harvested_emails.toLocaleString("hu-HU")}
+            icon={Globe}
+            tone={reach.harvested_emails > 0 ? "positive" : undefined}
+            hint="amit a Google Maps nem adott"
+          />
+          <Stat
+            label="Csak DM-mel elérhető"
+            value={reach.by_social.toLocaleString("hu-HU")}
+            icon={MessageCircle}
+            hint="nincs email, van profil"
+          />
+          <Stat
+            label="Nincs csatorna"
+            value={reach.unreachable.toLocaleString("hu-HU")}
+            icon={Slash}
+            tone={reach.unreachable > 0 ? "warning" : undefined}
+            hint="se email, se DM, se telefon"
+          />
+        </div>
+      </section>
+
+      {/* Batch launcher — verticals × cities in one click */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Batch indítás
+        </h2>
+        <BatchLauncher />
+      </section>
+
+      {/* Directory sources — beyond Google Maps */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Szakmai katalógusok
+        </h2>
+        <DirectoryLauncher />
+      </section>
+
       {/* Launcher cards */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Vadászat indítása
+          Vadászat indítása (egyesével)
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {(Object.keys(PROSPECTING_NICHE_LABELS) as Array<keyof typeof PROSPECTING_NICHE_LABELS>).map(

@@ -10,15 +10,27 @@
 import { inngest } from "@/lib/inngest/client";
 import { createServiceClient } from "@/lib/supabase/server";
 import { crawlWebsite, getCrawlResults, waitForCrawl } from "@/lib/apify/client";
+import { analyzeSite } from "@/lib/prospecting/site-analyzer";
 import {
   mergeVerification,
   runPagespeed,
   type PsiResult,
 } from "@/lib/prospecting/verify-site";
 import { TOP_THRESHOLD, scoreColdLead } from "@/lib/ai/scoring/cold-lead-score";
+import { deriveOfferTrack, isRecentlyOpened } from "@/lib/prospecting/offer-track";
+import { detectAdsSignal } from "@/lib/prospecting/ads-signal";
+import {
+  bestEmail,
+  extractContacts,
+  mergeContacts,
+  type ExtractedContacts,
+} from "@/lib/prospecting/contact-extract";
 import type {
+  AdsSignal,
+  ContactSource,
   PainSignal,
   ProspectingNiche,
+  SocialLinks,
   TechStack,
   WebsiteHealthStatus,
 } from "@/lib/types/app.types";
@@ -48,7 +60,7 @@ export const verifyWebsite = inngest.createFunction(
       const { data } = await supabase
         .from("leads")
         .select(
-          "id, company_name, niche, website_url, website_health_status, website_health_details, pain_signals, tech_stack, social_links, email, gmaps_phone, gmaps_rating, gmaps_review_count",
+          "id, company_name, niche, website_url, website_health_status, website_health_details, pain_signals, tech_stack, social_links, email, contact_source, discovered_emails, discovered_phones, gmaps_phone, gmaps_rating, gmaps_review_count",
         )
         .eq("id", lead_id)
         .single();
@@ -78,13 +90,26 @@ export const verifyWebsite = inngest.createFunction(
       runPagespeed(probeUrl),
     );
 
-    // ----- 2. Rendered crawl, only when content classification is in doubt -----
+    // Preliminary offer route from the (pre-verification) signals. Upgrade leads
+    // — a working site with a real hook — get the rendered crawl too, so the
+    // "convert more" audit is grounded in real content, not the static probe.
+    const preTrack = deriveOfferTrack({
+      website_url: lead.website_url,
+      website_health: health,
+      pain_signals: Array.isArray(lead.pain_signals)
+        ? (lead.pain_signals as unknown as PainSignal[])
+        : [],
+      tech_stack: (lead.tech_stack as unknown as TechStack | null) ?? null,
+    });
+
+    // ----- 2. Rendered crawl, when content classification is in doubt OR upgrade -----
     let rendered: { html: string | null; runId: string | null } = { html: null, runId: null };
-    if (health === "js_shell" || health === "tiny") {
+    if (health === "js_shell" || health === "tiny" || preTrack === "upgrade") {
       rendered = await step.run("render-crawl", async () => {
         try {
           const run = await crawlWebsite(psi?.final_url || probeUrl, {
-            maxCrawlPages: 1,
+            // Upgrade audits want more than the homepage to ground the pitch.
+            maxCrawlPages: preTrack === "upgrade" ? 2 : 1,
             crawlerType: "playwright:firefox",
             saveHtml: true,
           });
@@ -98,6 +123,47 @@ export const verifyWebsite = inngest.createFunction(
         }
       });
     }
+
+    // ----- 2c. Harvest contacts from the rendered HTML (Phase I) -----
+    // The rendered DOM sees addresses the static probe cannot: JS-injected
+    // footers, obfuscated mailto handlers, cookie-walled contact blocks. Merge
+    // over whatever the probe already stored, rendered winning.
+    const existingContacts: ExtractedContacts = {
+      emails: Array.isArray(lead.discovered_emails)
+        ? (lead.discovered_emails as unknown as ExtractedContacts["emails"])
+        : [],
+      phones: Array.isArray(lead.discovered_phones)
+        ? (lead.discovered_phones as unknown as string[])
+        : [],
+      socials: (lead.social_links as SocialLinks | null) ?? {},
+    };
+    // Leads imported before Phase I have no harvested contacts, and most never
+    // qualify for a rendered crawl. Re-probe those once (the same cheap static
+    // GET the importer does) so a backfill actually reaches the existing list.
+    const needsStaticHarvest = !rendered.html && existingContacts.emails.length === 0;
+    const staticContacts = needsStaticHarvest
+      ? await step.run("static-harvest", async () => {
+          const { contacts } = await analyzeSite(probeUrl);
+          return contacts;
+        })
+      : null;
+
+    const harvested = mergeContacts(
+      rendered.html ? extractContacts(rendered.html, psi?.final_url || probeUrl) : staticContacts,
+      existingContacts,
+    );
+    // Only fill an empty email — never overwrite one a human may have corrected.
+    const promotedEmail = lead.email ?? bestEmail(harvested);
+    const contactSource =
+      (lead.contact_source as ContactSource | null) ??
+      (lead.email ? "gmaps" : promotedEmail ? "website" : null);
+
+    // ----- 2b. Optional buying signal: are they running paid ads? -----
+    // No-ops to null without META_AD_LIBRARY_TOKEN (see ads-signal.ts).
+    const ads = await step.run("detect-ads", async (): Promise<AdsSignal | null> =>
+      detectAdsSignal(lead.company_name),
+    );
+    const recentlyOpened = isRecentlyOpened(lead.gmaps_rating, lead.gmaps_review_count);
 
     // ----- 3. Merge verified truth into the stored signals -----
     const currentSignals = Array.isArray(lead.pain_signals)
@@ -139,13 +205,22 @@ export const verifyWebsite = inngest.createFunction(
       gmaps_review_count: lead.gmaps_review_count,
       website_url: lead.website_url,
       website_health: merged.health_status,
-      social_links_count: lead.social_links
-        ? Object.keys(lead.social_links as Record<string, unknown>).length
-        : 0,
-      has_email: !!lead.email,
+      social_links_count: Object.keys(harvested.socials).length,
+      has_email: !!promotedEmail,
       has_phone: !!lead.gmaps_phone,
       pain_signals: merged.pain_signals,
       website_verified: true,
+      runs_ads: ads?.runs_ads ?? false,
+      recently_opened: recentlyOpened,
+    });
+
+    // Final offer route on verified truth (+ ads signal).
+    const offerTrack = deriveOfferTrack({
+      website_url: lead.website_url,
+      website_health: merged.health_status,
+      pain_signals: merged.pain_signals,
+      tech_stack: merged.tech_stack,
+      runs_ads: ads?.runs_ads ?? false,
     });
 
     // ----- 6. Persist -----
@@ -169,6 +244,14 @@ export const verifyWebsite = inngest.createFunction(
           },
           win_probability: score.total,
           win_probability_reasons: score.signals.map((s) => s.label),
+          ads_signal: ads,
+          recently_opened: recentlyOpened,
+          offer_track: offerTrack,
+          email: promotedEmail,
+          contact_source: contactSource,
+          discovered_emails: harvested.emails.length ? harvested.emails : null,
+          discovered_phones: harvested.phones.length ? harvested.phones : null,
+          social_links: Object.keys(harvested.socials).length ? harvested.socials : null,
         })
         .eq("id", lead_id);
     });

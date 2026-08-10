@@ -15,7 +15,13 @@
 //   - The pain audit informs WHAT to mention, but at most ONE pain point
 //     gets named — the rest is implied by the visual
 
-import type { ProspectingNiche } from "@/lib/types/app.types";
+import { z } from "zod";
+import type { OfferTrack, ProspectingNiche } from "@/lib/types/app.types";
+
+// One low-risk spintax instruction shared by both tracks. Emitting a single
+// {a|b} group in the CTA gives Phase E send-time wording variation for
+// deliverability without risking the crafted body (the AI writes both variants).
+const SPINTAX_NOTE = `SPINTAX (deliverability): A soft CTA mondatában (és CSAK ott) adj két, jelentésében azonos magyar megfogalmazást spintax formátumban: {első változat|második változat}. Pontosan egy ilyen csoport legyen az egész levélben, mindkét változat nyelvtanilag helyes és kicserélhető. Sehol máshol ne használj kapcsos zárójelet.`;
 
 export const COLD_OUTREACH_SYSTEM = `Te a Compass Marketing Kft. (kis magyar digitális ügynökség) szövegírója vagy. Magyar nyelvű hideg outreach e-maileket írsz, amelyek mindig egy ingyenes, általunk készített vizuális koncepcióval (mockup) párosulnak. A vizuális azt mutatja meg, hogy NÉZHETNE KI a címzett weboldala — ez a fő horog, a szöveg ezt vezeti fel.
 
@@ -51,7 +57,83 @@ ABSZOLÚT KÖTELEZŐ MINŐSÉGI ELVÁRÁSOK:
 
 7. HTML FORMÁZÁS: Az email_body_html kimenetben csak <p> és <strong> HTML tageket használj. Minden bekezdés saját <p> tagben. Soha ne tartalmazzon képet vagy aláírás-grafikát — azokat utólag illesztjük be.
 
+8. ${SPINTAX_NOTE}
+
 A kimenet KIZÁRÓLAG egy érvényes JSON objektum legyen, semmilyen előtt vagy után írt magyarázat, markdown jelölés nélkül.`;
+
+// Track 2 — "upgrade": the recipient already has a working site. We do NOT pitch
+// a rebuild; we point out concrete ways it could convert more, grounded ONLY in
+// VERIFIED signals (the 2.0 honesty rule). Never insult the existing site.
+export const COLD_OUTREACH_UPGRADE_SYSTEM = `Te a Compass Marketing Kft. (kis magyar digitális ügynökség) szövegírója vagy. Magyar nyelvű hideg outreach e-maileket írsz olyan vállalkozásoknak, amelyeknek MÁR VAN működő weboldaluk. A cél nem az oldal lecserélése, hanem hogy megmutassunk 2-3 konkrét, kézzelfogható lehetőséget, amivel az oldal több érdeklődőt/foglalást hozhatna.
+
+ABSZOLÚT KÖTELEZŐ MINŐSÉGI ELVÁRÁSOK:
+
+1. NYELV: Anyanyelvi szintű, kifogástalan magyar, következetes magázás ("Önök"). Semmi angol tükörfordítás, semmi anglicizmus (engagement, brand, konverzió, value, journey).
+
+2. SOHA NE BÁNTSD a meglévő oldalt. Kiindulópont: az oldaluk rendben van, szolid alap. Ezt ismerd is el egy fél mondatban ("látszik, hogy adnak a megjelenésre"). Utána jön a lehetőség.
+
+3. GROUNDING — EZ SZENT: Csak azokat a fejlesztési pontokat említsd, amelyeket a <verified_signals> blokk tartalmaz. Ezek renderelt, ELLENŐRZÖTT mérésen alapulnak. SOHA ne találj ki hiányosságot, ne tippelj. Ha kevés a jel, kevesebbet írj — inkább rövidebb, mint pontatlan. Ha egy jel nincs a listában, az NEM LÉTEZIK a leveled szempontjából.
+
+4. SZERKEZET (ebben a sorrendben):
+   a) Megszólítás — "Kedves {Vezetéknév} {Keresztnév}!" vagy "Tisztelt {Cégnév}!".
+   b) Konkrét felütés (1 mondat) — valami specifikus róluk (niche + város + szolgáltatás), és az oldaluk szolid alapjának elismerése.
+   c) 2-3 konkrét lehetőség (1-2 mondat) — a <verified_signals> alapján, mindegyik ÜZLETI haszonként megfogalmazva (pl. "mérhető adatok nélkül nehéz látni, honnan jönnek a foglalások — ezen egy egyszerű beállítás segítene"). NEM technikai zsargon, hanem érthető haszon.
+   d) Vizuális bevezetése (1 mondat) — készítettünk egy gyors "előtte/utána" jellegű koncepciót egy szekcióra, ajándékként.
+   e) Soft CTA (1 mondat).
+   f) Aláírás — "Üdvözlettel," új sorban "Compass Marketing".
+
+5. TILTÓ LISTA (ezeket SOHA): "Remélem, jól van." / "Bemutatkozni szeretnék..." / "A mai gyorsan változó digitális világban..." / felkiáltójel a megszólításon kívül / emoji / "értéket teremteni" / "lehetőséget feltárni".
+
+6. HOSSZ: 90–150 szó. Tömör, konkrét.
+
+7. HTML FORMÁZÁS: email_body_html-ben csak <p> és <strong>. Minden bekezdés saját <p>-ben. Kép nélkül.
+
+8. ${SPINTAX_NOTE}
+
+A kimenet KIZÁRÓLAG egy érvényes JSON objektum legyen, magyarázat és markdown nélkül.`;
+
+/** Pick the system prompt for a lead's offer track. low_priority reuses the
+ * needs_site framing (softest, industry-level) since there's no strong hook. */
+export function pickColdOutreachSystem(track: OfferTrack | null | undefined): string {
+  return track === "upgrade" ? COLD_OUTREACH_UPGRADE_SYSTEM : COLD_OUTREACH_SYSTEM;
+}
+
+// Follow-up touches (2nd/3rd email). Brief, non-pushy, references the earlier
+// concept without repeating it. Same JSON schema as the first touch.
+export const COLD_FOLLOWUP_SYSTEM = `Te a Compass Marketing Kft. szövegírója vagy. Egy KÖVETŐ (follow-up) magyar nyelvű e-mailt írsz olyan vállalkozásnak, akinek korábban már küldtünk egy első megkeresést egy ingyenes vizuális koncepcióval — de még nem válaszoltak.
+
+ABSZOLÚT KÖTELEZŐ:
+1. NAGYON RÖVID: 40–70 szó. Egy follow-up nem ismétli meg az első levelet.
+2. Nem tolakodó, nem számonkérő. Semmi "nem kaptam választ", "csak rákérdeznék". Helyette természetes, könnyed emlékeztető.
+3. Magyar, magázás ("Önök"), zéró anglicizmus, zéró emoji, felkiáltójel csak a megszólításban.
+4. Hivatkozz finoman a korábban küldött koncepcióra ("a múltkor küldött koncepció még áll").
+5. Egyetlen soft CTA — 15 perc, kötetlen beszélgetés.
+6. Aláírás: "Üdvözlettel," új sorban "Compass Marketing".
+7. email_body_html: csak <p> és <strong>. ${SPINTAX_NOTE}
+
+Kimenet: KIZÁRÓLAG a kért JSON, magyarázat nélkül.`;
+
+export function coldFollowupUserPrompt(input: ColdOutreachInput & { touch_number: number }): string {
+  return `<recipient>
+Cég: ${input.company_name}
+Kapcsolattartó: ${input.contact_name ?? "(ismeretlen — címezd a cégnek)"}
+Niche: ${input.niche ?? "ismeretlen"}
+Város: ${input.city ?? "ismeretlen"}
+</recipient>
+
+Ez a(z) ${input.touch_number}. érintés (follow-up). Az első levélben egy ingyenes vizuális koncepciót ígértünk/mutattunk. Írj egy rövid, könnyed emlékeztetőt.
+
+Adj vissza pontosan ezt a JSON struktúrát, semmi mást:
+{
+  "email_subject": "<rövid magyar tárgy, max 55 karakter, akár 'Re:' jellegű, de ne írj 'Re:'-t elé>",
+  "email_body_html": "<40–70 szavas follow-up, csak <p> és <strong> tagek, a fenti szabályokkal>",
+  "email_body_text": "<ugyanaz sima szövegként>",
+  "visual_concept": "<1 mondat: ugyanaz a koncepció, amit korábban ígértünk — belső log>",
+  "primary_pain_point_used": "<belső log>",
+  "personalization_hook": "<belső log, angol>",
+  "tone_notes": "<belső log, angol>"
+}`;
+}
 
 export interface ColdOutreachInput {
   company_name: string;
@@ -62,9 +144,19 @@ export interface ColdOutreachInput {
   website_url: string | null;
   pain_audit: string | null;
   enrichment_summary: string | null;
+  /** Which pitch to write. Defaults to needs_site when absent. */
+  offer_track?: OfferTrack | null;
+  /** VERIFIED pain-signal labels only — the sole allowed grounding for upgrade. */
+  verified_signals?: string[];
 }
 
 export function coldOutreachUserPrompt(input: ColdOutreachInput): string {
+  const isUpgrade = input.offer_track === "upgrade";
+  const verified =
+    input.verified_signals && input.verified_signals.length > 0
+      ? input.verified_signals.map((s) => `- ${s}`).join("\n")
+      : "(nincs ellenőrzött jel — írj visszafogottabb, iparág-szintű levelet, ne találj ki hiányosságot)";
+
   return `<recipient>
 Cég neve: ${input.company_name}
 Kapcsolattartó: ${input.contact_name ?? "(ismeretlen — címezd a cégnek)"}
@@ -72,11 +164,18 @@ Niche/iparág: ${input.niche ?? "ismeretlen"}
 Város: ${input.city ?? "ismeretlen"}
 Google Maps kategória: ${input.category ?? "ismeretlen"}
 Weboldal: ${input.website_url ?? "nincs publikus weboldaluk"}
+Ajánlati sáv: ${isUpgrade ? "UPGRADE — van működő oldaluk, konkrét fejlesztési lehetőségeket mutatunk" : "NEEDS_SITE — nincs rendes oldaluk, koncepciót mutatunk"}
 </recipient>
 
-<pain_audit>
+${
+  isUpgrade
+    ? `<verified_signals>
+${verified}
+</verified_signals>`
+    : `<pain_audit>
 ${input.pain_audit ?? "(még nincs audit — írj puhább felütést, csak az iparágukra utalva)"}
-</pain_audit>
+</pain_audit>`
+}
 
 <enrichment_summary>
 ${input.enrichment_summary ?? "(nincs enrichment adat)"}
@@ -94,12 +193,14 @@ Adj vissza pontosan ezt a JSON struktúrát, semmi mást:
 }`;
 }
 
-export interface ColdOutreachResult {
-  email_subject: string;
-  email_body_html: string;
-  email_body_text: string;
-  visual_concept: string;
-  primary_pain_point_used: string;
-  personalization_hook: string;
-  tone_notes: string;
-}
+export const ColdOutreachSchema = z.object({
+  email_subject: z.string(),
+  email_body_html: z.string(),
+  email_body_text: z.string(),
+  visual_concept: z.string(),
+  primary_pain_point_used: z.string(),
+  personalization_hook: z.string(),
+  tone_notes: z.string(),
+});
+
+export type ColdOutreachResult = z.infer<typeof ColdOutreachSchema>;

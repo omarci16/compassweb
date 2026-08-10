@@ -6,6 +6,7 @@ import {
   Check,
   Copy,
   Image as ImageIcon,
+  Inbox,
   Loader2,
   Mail,
   Send,
@@ -136,6 +137,11 @@ export function ColdOutreachModal({
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
 
+  // Draft queue state
+  const [offerTrack, setOfferTrack] = useState<string | null>(null);
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [savedDraft, setSavedDraft] = useState(false);
+
   const visualUrls = useMemo(() => uploads.map((u) => u.public_url), [uploads]);
   const visualAlt = `${companyName ?? "Compass"} — koncepció`;
   const previewHtml = useMemo(
@@ -161,6 +167,8 @@ export function ColdOutreachModal({
       setDraft(r);
       setSubject(r.email_subject);
       setBodyHtml(r.email_body_html);
+      setOfferTrack((data.offer_track as string) ?? null);
+      setSavedDraft(false);
       setImagePrompt(null);
     } catch (err) {
       setDraftError(err instanceof Error ? err.message : "Ismeretlen hiba");
@@ -234,6 +242,36 @@ export function ColdOutreachModal({
 
   const removeUpload = (url: string) => {
     setUploads((prev) => prev.filter((u) => u.public_url !== url));
+  };
+
+  const saveToQueue = async () => {
+    setSavingDraft(true);
+    setSendError(null);
+    try {
+      const res = await fetch("/api/outreach/drafts", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          lead_id: leadId,
+          subject,
+          body_html: bodyHtml,
+          body_text: htmlToText(bodyHtml),
+          track: offerTrack ?? undefined,
+          visual_urls: visualUrls,
+          visual_concept: draft?.visual_concept,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSendError(data.error ?? "Mentés sikertelen");
+        return;
+      }
+      setSavedDraft(true);
+    } catch (err) {
+      setSendError(err instanceof Error ? err.message : "Ismeretlen hiba");
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const send = async () => {
@@ -679,17 +717,33 @@ export function ColdOutreachModal({
                 <Button variant="ghost" size="sm" onClick={() => setTab("visual")}>
                   ← Vissza
                 </Button>
-                <Button
-                  onClick={() => void send()}
-                  disabled={sending || !recipientEmail || !subject || !bodyHtml}
-                >
-                  {sending ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  ) : (
-                    <Send className="h-4 w-4 mr-1.5" />
-                  )}
-                  Küldés Resenden át
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => void saveToQueue()}
+                    disabled={savingDraft || savedDraft || !subject || !bodyHtml}
+                  >
+                    {savingDraft ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                    ) : savedDraft ? (
+                      <Check className="h-4 w-4 mr-1.5" />
+                    ) : (
+                      <Inbox className="h-4 w-4 mr-1.5" />
+                    )}
+                    {savedDraft ? "Sorban" : "Sorba mentés"}
+                  </Button>
+                  <Button
+                    onClick={() => void send()}
+                    disabled={sending || !recipientEmail || !subject || !bodyHtml}
+                  >
+                    {sending ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+                    ) : (
+                      <Send className="h-4 w-4 mr-1.5" />
+                    )}
+                    Küldés Resenden át
+                  </Button>
+                </div>
               </div>
             </TabsContent>
           </Tabs>

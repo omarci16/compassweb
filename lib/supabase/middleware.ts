@@ -7,6 +7,7 @@ const PUBLIC_PREFIXES = [
   "/api/portal",
   "/api/webhooks",
   "/api/leads/inbound",
+  "/api/unsubscribe",
   "/_next",
   "/favicon",
 ];

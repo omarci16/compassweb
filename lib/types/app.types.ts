@@ -4,8 +4,12 @@ import type {
   EmailLogRow,
   InvoiceRow,
   LeadRow,
+  OutreachDraftRow,
+  OutreachSendRow,
   ProjectRow,
   ScrapingJobRow,
+  SendingInboxRow,
+  SuppressionRow,
   TemplateRow,
 } from "./database.types";
 
@@ -98,11 +102,45 @@ export type EmailType =
 
 export type ReEngagementStatus = "active" | "paused" | "converted" | "unsubscribed";
 
+// Free in-code email verification (Scraping 2.1, Phase B).
+//   valid   — syntax ok, not disposable, domain has MX
+//   risky   — role account (info@/office@…) or MX unverifiable — sendable, low trust
+//   invalid — bad syntax, disposable, or no mail server → never queued for sending
+//   unknown — no email on the lead / not yet checked
+export type EmailStatus = "valid" | "risky" | "invalid" | "unknown";
+
+// Offer routing (Scraping 2.1, Phase C) — which pitch this lead gets.
+//   needs_site   — no usable site (no_website/broken/redirect_social/tiny): pitch "here's a concept"
+//   upgrade      — working site + a concrete hook (stale, Wix, no analytics, runs ads…): pitch "convert more"
+//   low_priority — healthy, strong, no hook / unverifiable: don't spend a touch yet
+export type OfferTrack = "needs_site" | "upgrade" | "low_priority";
+
+// Provenance of leads.email (Phase I, contact harvesting).
+//   gmaps   — Google Maps supplied it during discovery
+//   website — harvested from HTML we had already downloaded
+//   manual  — a human typed it in
+export type ContactSource = "gmaps" | "website" | "manual";
+
+// Buying signal: does the business currently run paid ads? (Meta Ad Library.)
+export type AdsSignal = {
+  runs_ads: boolean;
+  source: "meta_ad_library";
+  ad_count?: number;
+  checked_at: string; // ISO
+};
+
 // ---------------------------------------------------------------------
 // Prospecting (cold lead sourcing)
 // ---------------------------------------------------------------------
 
-export type ProspectingNiche = "beauty" | "fitness" | "dental" | "real_estate" | "other";
+export type ProspectingNiche =
+  | "beauty"
+  | "fitness"
+  | "dental"
+  | "real_estate"
+  | "legal"
+  | "hospitality"
+  | "other";
 
 export type ScrapingJobStatus =
   | "queued"
@@ -135,6 +173,8 @@ export const PROSPECTING_NICHE_LABELS: Record<ProspectingNiche, string> = {
   fitness: "Fitness",
   dental: "Dental",
   real_estate: "Real estate",
+  legal: "Legal",
+  hospitality: "Hospitality",
   other: "Other",
 };
 
@@ -143,6 +183,8 @@ export const PROSPECTING_NICHE_LABELS_HU: Record<ProspectingNiche, string> = {
   fitness: "Fitness",
   dental: "Fogászat",
   real_estate: "Ingatlan",
+  legal: "Ügyvéd / jog",
+  hospitality: "Vendéglátás",
   other: "Egyéb",
 };
 
@@ -271,12 +313,25 @@ export const SOURCE_LABELS: Record<LeadSource, string> = {
 // Strongly typed re-exports (so domain code never deals with `string` enum cols)
 // ---------------------------------------------------------------------
 
-export type Lead = Omit<LeadRow, "source" | "status" | "enrichment_status" | "loss_reason" | "package_interest"> & {
+export type Lead = Omit<
+  LeadRow,
+  | "source"
+  | "status"
+  | "enrichment_status"
+  | "loss_reason"
+  | "package_interest"
+  | "email_status"
+  | "offer_track"
+  | "contact_source"
+> & {
   source: LeadSource;
   status: LeadStatus;
   enrichment_status: EnrichmentStatus;
   loss_reason: LossReason | null;
   package_interest: Package | null;
+  email_status: EmailStatus | null;
+  offer_track: OfferTrack | null;
+  contact_source: ContactSource | null;
 };
 
 export type Deal = Omit<DealRow, "stage" | "proposed_package"> & {
@@ -308,6 +363,53 @@ export type ScrapingJob = Omit<ScrapingJobRow, "niche" | "status"> & {
   niche: ProspectingNiche;
   status: ScrapingJobStatus;
 };
+
+// ---------------------------------------------------------------------
+// Outreach machine (Scraping 2.1)
+// ---------------------------------------------------------------------
+
+export type OutreachDraftStatus =
+  | "draft"
+  | "approved"
+  | "scheduled"
+  | "sent"
+  | "skipped";
+
+// Delivery lifecycle for a single send (mutable — lives in outreach_sends,
+// NOT email_log which is append-only).
+export type OutreachSendStatus =
+  | "queued"
+  | "sent"
+  | "delivered"
+  | "opened"
+  | "clicked"
+  | "bounced"
+  | "complained"
+  | "unsubscribed"
+  | "failed";
+
+export type SuppressionReason =
+  | "unsubscribe"
+  | "bounce"
+  | "complaint"
+  | "manual"
+  | "invalid";
+
+export type OutreachDraft = Omit<OutreachDraftRow, "track" | "status" | "visual_urls"> & {
+  track: OfferTrack;
+  status: OutreachDraftStatus;
+  visual_urls: string[];
+};
+
+export type OutreachSend = Omit<OutreachSendRow, "status"> & {
+  status: OutreachSendStatus;
+};
+
+export type Suppression = Omit<SuppressionRow, "reason"> & {
+  reason: SuppressionReason;
+};
+
+export type SendingInbox = SendingInboxRow;
 
 // ---------------------------------------------------------------------
 // API response shapes

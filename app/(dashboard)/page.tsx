@@ -7,6 +7,7 @@ import {
   Activity,
 } from "lucide-react";
 import { DailyBriefingCard } from "@/components/layout/DailyBriefing";
+import { OutboundControlTower } from "@/components/layout/OutboundControlTower";
 import { Stat } from "@/components/shared/Stat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import {
   computeBriefing,
   getLeads,
+  getOutboundStats,
   getProjects,
   getRevenueMetrics,
 } from "@/lib/data/queries";
@@ -41,11 +43,12 @@ export default async function DashboardHome() {
     firstName = fullName.split(" ")[0] ?? "Richárd";
   }
 
+  const outbound = await getOutboundStats();
   const [leads, projects, revenue, briefing] = await Promise.all([
     getLeads({ status: "active", limit: 5 }),
     getProjects({ activeOnly: true }),
     getRevenueMetrics(),
-    computeBriefing(firstName),
+    computeBriefing(firstName, outbound),
   ]);
 
   const topProjects = projects.slice(0, 5);
@@ -53,6 +56,8 @@ export default async function DashboardHome() {
   return (
     <div className="space-y-6">
       <DailyBriefingCard briefing={briefing} />
+
+      <OutboundControlTower stats={outbound} />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat

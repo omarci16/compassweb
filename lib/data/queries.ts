@@ -7,9 +7,13 @@ import type {
   DailyBriefingItem,
   Deal,
   EmailLog,
+  EmailStatus,
   Invoice,
   Lead,
   LeadStatus,
+  OutreachDraft,
+  OutreachDraftStatus,
+  OfferTrack,
   Project,
   ScrapingJob,
 } from "@/lib/types/app.types";
@@ -18,6 +22,7 @@ import {
   demoEmailLog,
   demoInvoices,
   demoLeads,
+  demoOutreachDrafts,
   demoProjects,
 } from "./demo";
 import { differenceInDays } from "date-fns";
@@ -282,6 +287,60 @@ export async function getSourceEffectiveness(): Promise<SourceEffectivenessRow[]
   });
 }
 
+/**
+ * Pure: turn closed-lead rows into a per-niche win rate (%). Only niches with
+ * at least `minClosed` closed deals are returned, so a single fluke win/loss
+ * can't swing a niche's score. Exported so Inngest functions (which use the
+ * service client) can share the exact logic with the cookie-client query below.
+ */
+export function computeNicheWinRates(
+  rows: { niche: string | null; status: string }[],
+  minClosed = 5,
+): Record<string, number> {
+  const buckets = new Map<string, { wins: number; total: number }>();
+  for (const r of rows) {
+    if (!r.niche) continue;
+    if (r.status !== "won" && r.status !== "lost") continue;
+    const b = buckets.get(r.niche) ?? { wins: 0, total: 0 };
+    b.total += 1;
+    if (r.status === "won") b.wins += 1;
+    buckets.set(r.niche, b);
+  }
+  const out: Record<string, number> = {};
+  for (const [niche, b] of buckets) {
+    if (b.total >= minClosed) out[niche] = Math.round((b.wins / b.total) * 100);
+  }
+  return out;
+}
+
+/**
+ * Historical win rate (%) per niche, from closed leads (won vs won+lost).
+ * Feeds `scoreColdLead`'s `historical_niche_win_rates` input so the scorer
+ * nudges niches up/down by proven conversion — the "prompt-based improvement"
+ * loop from CLAUDE.md §8.1, but purely deterministic here.
+ */
+export async function getNicheWinRates(): Promise<Record<string, number>> {
+  if (!isSupabaseConfigured()) {
+    return computeNicheWinRates(
+      demoLeads.map((l) => ({ niche: l.niche, status: l.status })),
+    );
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("niche, status")
+    .in("status", ["won", "lost"])
+    .limit(5000);
+  if (error) {
+    console.error("getNicheWinRates error", error);
+    return {};
+  }
+  return computeNicheWinRates(
+    (data ?? []) as { niche: string | null; status: string }[],
+  );
+}
+
 export async function getScrapingJobs(opts?: { limit?: number }): Promise<ScrapingJob[]> {
   if (!isSupabaseConfigured()) return [];
   const supabase = createClient();
@@ -382,6 +441,219 @@ export async function getEmailLog(opts?: {
   if (opts?.limit) query = query.limit(opts.limit);
   const { data } = await query;
   return (data ?? []) as unknown as EmailLog[];
+}
+
+// ---------------------------------------------------------------------
+// Outreach approval queue (Scraping 2.1)
+// ---------------------------------------------------------------------
+
+export interface OutreachDraftView extends OutreachDraft {
+  company_name: string;
+  email: string | null;
+  email_status: EmailStatus | null;
+  offer_track_lead: OfferTrack | null;
+}
+
+const DRAFT_VIEW_COLUMNS =
+  "id, created_at, updated_at, lead_id, track, subject, body_html, body_text, visual_urls, visual_concept, sequence_id, touch_number, spintax_variant, status, approved_at, approved_by, ai_meta";
+
+export async function getOutreachDrafts(opts?: {
+  statuses?: OutreachDraftStatus[];
+  limit?: number;
+}): Promise<OutreachDraftView[]> {
+  const statuses = opts?.statuses ?? ["draft", "approved", "scheduled"];
+  const limit = opts?.limit ?? 100;
+
+  if (!isSupabaseConfigured()) {
+    const leadById = new Map(demoLeads.map((l) => [l.id, l]));
+    return demoOutreachDrafts
+      .filter((d) => statuses.includes(d.status))
+      .slice(0, limit)
+      .map((d) => {
+        const lead = leadById.get(d.lead_id);
+        return {
+          ...d,
+          company_name: lead?.company_name ?? "—",
+          email: lead?.email ?? null,
+          email_status: lead?.email_status ?? null,
+          offer_track_lead: lead?.offer_track ?? null,
+        };
+      });
+  }
+
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("outreach_drafts")
+    .select(DRAFT_VIEW_COLUMNS)
+    .in("status", statuses)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.error("getOutreachDrafts error", error);
+    return [];
+  }
+  const drafts = (data ?? []) as unknown as OutreachDraft[];
+  const leadIds = Array.from(new Set(drafts.map((d) => d.lead_id)));
+  const { data: leadRows } = leadIds.length
+    ? await supabase
+        .from("leads")
+        .select("id, company_name, email, email_status, offer_track")
+        .in("id", leadIds)
+    : { data: [] as unknown[] };
+  const leadMap = new Map(
+    ((leadRows ?? []) as {
+      id: string;
+      company_name: string;
+      email: string | null;
+      email_status: string | null;
+      offer_track: string | null;
+    }[]).map((l) => [l.id, l]),
+  );
+  return drafts.map((d) => {
+    const lead = leadMap.get(d.lead_id);
+    return {
+      ...d,
+      visual_urls: Array.isArray(d.visual_urls) ? d.visual_urls : [],
+      company_name: lead?.company_name ?? "—",
+      email: lead?.email ?? null,
+      email_status: (lead?.email_status as EmailStatus | null) ?? null,
+      offer_track_lead: (lead?.offer_track as OfferTrack | null) ?? null,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------
+// Outbound control tower (Scraping 2.1, Phase G)
+// ---------------------------------------------------------------------
+
+export interface OutboundTarget {
+  id: string;
+  company_name: string;
+  win_probability: number | null;
+  offer_track: OfferTrack | null;
+  city: string | null;
+}
+
+export interface OutboundStats {
+  drafts_pending: number;
+  drafts_approved: number;
+  by_track: { needs_site: number; upgrade: number; low_priority: number };
+  sent_today: number;
+  opened_today: number;
+  replied_today: number;
+  bounced_today: number;
+  suppressed_total: number;
+  top_targets: OutboundTarget[];
+}
+
+const EMPTY_OUTBOUND: OutboundStats = {
+  drafts_pending: 0,
+  drafts_approved: 0,
+  by_track: { needs_site: 0, upgrade: 0, low_priority: 0 },
+  sent_today: 0,
+  opened_today: 0,
+  replied_today: 0,
+  bounced_today: 0,
+  suppressed_total: 0,
+  top_targets: [],
+};
+
+function startOfTodayIso(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString();
+}
+
+export async function getOutboundStats(): Promise<OutboundStats> {
+  if (!isSupabaseConfigured()) {
+    const pending = demoOutreachDrafts.filter((d) => d.status === "draft").length;
+    const approved = demoOutreachDrafts.filter((d) => d.status === "approved").length;
+    const targets = demoLeads
+      .filter((l) => l.source === "cold_outreach" && !l.first_contact_at)
+      .slice(0, 6)
+      .map((l) => ({
+        id: l.id,
+        company_name: l.company_name,
+        win_probability: l.win_probability,
+        offer_track: l.offer_track,
+        city: l.gmaps_city,
+      }));
+    return { ...EMPTY_OUTBOUND, drafts_pending: pending, drafts_approved: approved, top_targets: targets };
+  }
+
+  const supabase = createClient();
+  const today = startOfTodayIso();
+  const headCount = "id";
+
+  const [
+    draftsPending,
+    draftsApproved,
+    sentToday,
+    openedToday,
+    bouncedToday,
+    repliedToday,
+    suppressed,
+    uncontacted,
+  ] = await Promise.all([
+    supabase.from("outreach_drafts").select(headCount, { count: "exact", head: true }).eq("status", "draft"),
+    supabase.from("outreach_drafts").select(headCount, { count: "exact", head: true }).eq("status", "approved"),
+    supabase.from("outreach_sends").select(headCount, { count: "exact", head: true }).gte("sent_at", today),
+    supabase.from("outreach_sends").select(headCount, { count: "exact", head: true }).gte("opened_at", today),
+    supabase.from("outreach_sends").select(headCount, { count: "exact", head: true }).gte("bounced_at", today),
+    supabase
+      .from("email_log")
+      .select(headCount, { count: "exact", head: true })
+      .eq("direction", "inbound")
+      .gte("created_at", today),
+    supabase.from("suppression_list").select(headCount, { count: "exact", head: true }),
+    supabase
+      .from("leads")
+      .select("id, company_name, win_probability, offer_track, gmaps_city, email_status")
+      .eq("source", "cold_outreach")
+      .is("first_contact_at", null)
+      .not("offer_track", "is", null)
+      .neq("email_status", "invalid")
+      .order("win_probability", { ascending: false, nullsFirst: false })
+      .limit(200),
+  ]);
+
+  const uncontactedRows = (uncontacted.data ?? []) as {
+    id: string;
+    company_name: string;
+    win_probability: number | null;
+    offer_track: string | null;
+    gmaps_city: string | null;
+  }[];
+
+  const by_track = { needs_site: 0, upgrade: 0, low_priority: 0 };
+  for (const r of uncontactedRows) {
+    if (r.offer_track === "needs_site") by_track.needs_site += 1;
+    else if (r.offer_track === "upgrade") by_track.upgrade += 1;
+    else if (r.offer_track === "low_priority") by_track.low_priority += 1;
+  }
+
+  const top_targets: OutboundTarget[] = uncontactedRows
+    .filter((r) => r.offer_track === "needs_site" || r.offer_track === "upgrade")
+    .slice(0, 6)
+    .map((r) => ({
+      id: r.id,
+      company_name: r.company_name,
+      win_probability: r.win_probability,
+      offer_track: (r.offer_track as OfferTrack | null) ?? null,
+      city: r.gmaps_city,
+    }));
+
+  return {
+    drafts_pending: draftsPending.count ?? 0,
+    drafts_approved: draftsApproved.count ?? 0,
+    by_track,
+    sent_today: sentToday.count ?? 0,
+    opened_today: openedToday.count ?? 0,
+    replied_today: repliedToday.count ?? 0,
+    bounced_today: bouncedToday.count ?? 0,
+    suppressed_total: suppressed.count ?? 0,
+    top_targets,
+  };
 }
 
 // ---------------------------------------------------------------------
@@ -487,15 +759,45 @@ export async function getInsights(): Promise<Insights> {
 // at every page load.)
 // ---------------------------------------------------------------------
 
-export async function computeBriefing(firstName = "Richárd"): Promise<DailyBriefing> {
-  const [leads, projects, invoices] = await Promise.all([
+export async function computeBriefing(
+  firstName = "Richárd",
+  outbound?: OutboundStats,
+): Promise<DailyBriefing> {
+  const [leads, projects, invoices, outboundStats] = await Promise.all([
     getLeads({ limit: 200 }),
     getProjects({ activeOnly: true }),
     getInvoices(),
+    outbound ? Promise.resolve(outbound) : getOutboundStats(),
   ]);
 
   const now = Date.now();
   const items: DailyBriefingItem[] = [];
+
+  // 0. Outbound machine — drafts to approve, approved to send, bounces to watch.
+  if (outboundStats.drafts_pending > 0) {
+    items.push({
+      severity: "action",
+      title: `${outboundStats.drafts_pending} outreach piszkozat jóváhagyásra vár`,
+      detail: "Nyisd meg a jóváhagyási sort — semmi nem megy ki jóváhagyás nélkül.",
+      href: "/outreach",
+    });
+  }
+  if (outboundStats.drafts_approved > 0) {
+    items.push({
+      severity: "action",
+      title: `${outboundStats.drafts_approved} jóváhagyott levél küldésre kész`,
+      detail: "Indítsd el a küldést — rotált postafiókokból, napi limittel megy ki.",
+      href: "/outreach",
+    });
+  }
+  if (outboundStats.bounced_today > 0) {
+    items.push({
+      severity: "info",
+      title: `${outboundStats.bounced_today} bounce ma`,
+      detail: "A bounce-oló címek automatikusan a suppression listára kerültek.",
+      href: "/outreach",
+    });
+  }
 
   // 1. Urgent projects: revision deadline past, or stuck >7d on us
   const revisionPastDue = projects.filter(
