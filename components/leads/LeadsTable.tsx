@@ -24,7 +24,8 @@ import { SpeedToLeadTimer } from "./SpeedToLeadTimer";
 import { EnrichmentStatusBadge } from "./EnrichmentStatus";
 import { formatRelativeHu } from "@/lib/utils/format";
 import { SOURCE_LABELS, type Lead, type LeadSource, type LeadStatus } from "@/lib/types/app.types";
-import { ArrowRight, Filter } from "lucide-react";
+import { isContactable, leadReachChannel } from "@/lib/prospecting/contactability";
+import { ArrowRight, AtSign, Filter, MessageCircle, Phone, Slash } from "lucide-react";
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "success" | "warning" | "destructive" | "info" | "outline" | "purple"> = {
   new: "info",
@@ -38,19 +39,62 @@ const STATUS_VARIANTS: Record<string, "default" | "secondary" | "success" | "war
   archived: "outline",
 };
 
+/**
+ * Which channel this lead is reachable on. A harvested address (Phase I) is
+ * marked so it is obvious the win came from the site, not Google Maps.
+ */
+function ReachBadge({ lead }: { lead: Lead }) {
+  const channel = leadReachChannel(lead);
+
+  if (channel === "none") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <Slash className="h-3 w-3" />
+        none
+      </span>
+    );
+  }
+
+  const meta = {
+    email: { icon: AtSign, label: "email", variant: "success" as const },
+    social: { icon: MessageCircle, label: "DM", variant: "purple" as const },
+    phone: { icon: Phone, label: "phone", variant: "outline" as const },
+  }[channel];
+
+  return (
+    <span className="inline-flex items-center gap-1">
+      <Badge variant={meta.variant} className="font-normal gap-1">
+        <meta.icon className="h-3 w-3" />
+        {meta.label}
+      </Badge>
+      {channel === "email" && lead.contact_source === "website" && (
+        <span
+          className="text-[10px] text-muted-foreground"
+          title="A weboldalról kinyert cím (nem a Google Mapsről)"
+        >
+          web
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function LeadsTable({ leads }: { leads: Lead[] }) {
   const [q, setQ] = useState("");
   const [source, setSource] = useState<string>("all");
   const [status, setStatus] = useState<string>("all");
+  const [reach, setReach] = useState<string>("all");
 
   const filtered = useMemo(() => {
     return leads.filter((l) => {
       if (q && !`${l.company_name} ${l.contact_name ?? ""} ${l.niche ?? ""}`.toLowerCase().includes(q.toLowerCase())) return false;
       if (source !== "all" && l.source !== source) return false;
       if (status !== "all" && l.status !== status) return false;
+      if (reach === "reachable" && !isContactable(l)) return false;
+      if (reach === "unreachable" && isContactable(l)) return false;
       return true;
     });
-  }, [leads, q, source, status]);
+  }, [leads, q, source, status, reach]);
 
   return (
     <div className="space-y-4">
@@ -82,6 +126,14 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             ))}
           </SelectContent>
         </Select>
+        <Select value={reach} onValueChange={setReach}>
+          <SelectTrigger className="w-[170px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Any contactability</SelectItem>
+            <SelectItem value="reachable">Contactable only</SelectItem>
+            <SelectItem value="unreachable">No channel</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-xl border border-border overflow-hidden bg-card">
@@ -92,6 +144,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
               <TableHead>Source</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Score</TableHead>
+              <TableHead>Contact</TableHead>
               <TableHead>Enrichment</TableHead>
               <TableHead>Speed</TableHead>
               <TableHead className="text-right">Created</TableHead>
@@ -123,6 +176,9 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
                   <LeadScoreBadge score={l.win_probability} />
                 </TableCell>
                 <TableCell>
+                  <ReachBadge lead={l} />
+                </TableCell>
+                <TableCell>
                   <EnrichmentStatusBadge status={l.enrichment_status} />
                 </TableCell>
                 <TableCell>
@@ -145,7 +201,7 @@ export function LeadsTable({ leads }: { leads: Lead[] }) {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-12">
+                <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-12">
                   No leads match the current filters.
                 </TableCell>
               </TableRow>

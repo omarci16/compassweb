@@ -1,14 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeft,
-  Mail,
-  Phone,
-  Globe,
-  Sparkles,
-  CheckCircle2,
-  XCircle,
-} from "lucide-react";
+import { ArrowLeft, Sparkles, CheckCircle2, XCircle } from "lucide-react";
 import { getLeadById } from "@/lib/data/queries";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -23,10 +15,13 @@ import { TechStackBadges } from "@/components/leads/TechStackBadges";
 import { PainAuditCard } from "@/components/leads/PainAuditCard";
 import { WebsiteSnapshotCard } from "@/components/leads/WebsiteSnapshotCard";
 import { ColdOutreachModal } from "@/components/leads/ColdOutreachModal";
+import { ContactCard } from "@/components/leads/ContactCard";
+import type { DiscoveredEmail } from "@/lib/prospecting/contact-extract";
 import {
   SOURCE_LABELS,
   PACKAGE_LABELS,
   type PainSignal,
+  type SocialLinks,
   type TechStack,
 } from "@/lib/types/app.types";
 import { formatDateTimeHu, formatRelativeHu } from "@/lib/utils/format";
@@ -46,6 +41,12 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
   const techStack: TechStack | null = lead.tech_stack
     ? (lead.tech_stack as unknown as TechStack)
     : null;
+  const discoveredEmails: DiscoveredEmail[] = Array.isArray(lead.discovered_emails)
+    ? (lead.discovered_emails as unknown as DiscoveredEmail[])
+    : [];
+  const discoveredPhones: string[] = Array.isArray(lead.discovered_phones)
+    ? (lead.discovered_phones as unknown as string[])
+    : [];
   const isColdSourced = lead.source === "cold_outreach";
   const health = lead.website_health_status;
   const finalUrl =
@@ -239,16 +240,16 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
         </div>
 
         <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Contact</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2.5">
-              <DetailRow icon={Mail} label="Email" value={lead.email} link={lead.email ? `mailto:${lead.email}` : undefined} />
-              <DetailRow icon={Phone} label="Phone" value={lead.phone} link={lead.phone ? `tel:${lead.phone}` : undefined} />
-              <DetailRow icon={Globe} label="Website" value={lead.website_url} link={lead.website_url ?? undefined} />
-            </CardContent>
-          </Card>
+          <ContactCard
+            email={lead.email}
+            phone={lead.phone}
+            websiteUrl={lead.website_url}
+            emailStatus={lead.email_status}
+            contactSource={lead.contact_source}
+            discoveredEmails={discoveredEmails}
+            discoveredPhones={discoveredPhones}
+            socialLinks={(lead.social_links as SocialLinks | null) ?? null}
+          />
 
           <Card>
             <CardHeader className="pb-3">
@@ -276,38 +277,6 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
             </CardContent>
           </Card>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({
-  icon: Icon,
-  label,
-  value,
-  link,
-}: {
-  icon: typeof Mail;
-  label: string;
-  value: string | null;
-  link?: string;
-}) {
-  return (
-    <div className="flex items-start gap-2.5 text-sm">
-      <Icon className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
-      <div className="flex-1 min-w-0">
-        <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</div>
-        {value ? (
-          link ? (
-            <a href={link} className="text-foreground hover:text-primary hover:underline truncate block" target="_blank" rel="noreferrer">
-              {value}
-            </a>
-          ) : (
-            <span className="text-foreground">{value}</span>
-          )
-        ) : (
-          <span className="text-muted-foreground italic">—</span>
-        )}
       </div>
     </div>
   );
