@@ -305,6 +305,9 @@ export type ScrapingJobRow = {
   estimated_cost_usd: number | null;
   triggered_by: string | null;
   notes: string | null;
+  // Directory sources (added in 0013_directory_sources.sql)
+  source_type: string;
+  source_key: string | null;
 };
 
 // Outreach machine (Scraping 2.1) — see 0009_outreach_drafts.sql + 0010_outreach_sending.sql.

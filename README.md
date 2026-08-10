@@ -24,6 +24,10 @@ sending stack, built on **free tools only**:
 
 - **Targeting**: 6 verticals (beauty, fitness, dental, real estate, **legal**,
   **hospitality**) × cities, launched one-off or via a **batch launcher**.
+- **Sources**: Google Maps (Apify) plus **trade directories** —
+  `fogorvoskereso.hu` for dentists, a deterministic reader that costs nothing
+  and reaches practices whose Maps listing is thin or missing. Directory rows
+  join the same import path and are deduped as `<source>:<id>`.
 - **Contactability**: contacts are harvested from HTML the pipeline already
   downloads (the static probe, plus the rendered crawl) — emails ranked
   own-domain-personal first, phones normalised to +36, and social profiles kept

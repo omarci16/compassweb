@@ -7,6 +7,7 @@ import {
 import { Stat } from "@/components/shared/Stat";
 import { ScrapeLauncher } from "@/components/prospecting/ScrapeLauncher";
 import { BatchLauncher } from "@/components/prospecting/BatchLauncher";
+import { DirectoryLauncher } from "@/components/prospecting/DirectoryLauncher";
 import { ScrapingJobsList } from "@/components/prospecting/ScrapingJobsList";
 import { SourceEffectiveness } from "@/components/prospecting/SourceEffectiveness";
 import {
@@ -129,6 +130,14 @@ export default async function ProspectingPage() {
           Batch indítás
         </h2>
         <BatchLauncher />
+      </section>
+
+      {/* Directory sources — beyond Google Maps */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Szakmai katalógusok
+        </h2>
+        <DirectoryLauncher />
       </section>
 
       {/* Launcher cards */}

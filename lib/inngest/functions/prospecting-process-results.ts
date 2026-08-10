@@ -24,6 +24,10 @@ import { analyzeMany } from "@/lib/prospecting/site-analyzer";
 import { normalizeWebsiteHost } from "@/lib/prospecting/normalize";
 import { verifyManyEmails } from "@/lib/prospecting/email-verify";
 import { bestEmail, mergeContacts } from "@/lib/prospecting/contact-extract";
+import {
+  FOGORVOSKERESO_KEY,
+  fetchFogorvoskeresoCandidates,
+} from "@/lib/prospecting/sources/fogorvoskereso";
 import { deriveOfferTrack, isRecentlyOpened } from "@/lib/prospecting/offer-track";
 import {
   HIGH_THRESHOLD,
@@ -50,7 +54,8 @@ export const prospectingProcessResults = inngest.createFunction(
         .single();
       return data;
     });
-    if (!job || !job.apify_run_id) {
+    const isDirectory = job?.source_type === "directory";
+    if (!job || (!isDirectory && !job.apify_run_id)) {
       return { ok: false, reason: "Job missing or has no Apify run" };
     }
 
@@ -62,8 +67,18 @@ export const prospectingProcessResults = inngest.createFunction(
     });
 
     // ----- Pull and normalise raw items -----
+    // Only the SOURCE of candidates differs between a Google Maps run and a
+    // directory run; everything below (dedup → contact harvest → email verify →
+    // score → offer routing → insert) is shared.
     const niche = job.niche as ProspectingNiche;
     const candidates = await step.run("collect-and-normalise", async () => {
+      if (isDirectory) {
+        if (job.source_key !== FOGORVOSKERESO_KEY) return [] as LeadCandidate[];
+        return fetchFogorvoskeresoCandidates(niche, {
+          city: job.city && job.city !== "Hungary" ? job.city : null,
+          maxResults: job.max_results ?? 200,
+        });
+      }
       const raws = await getGoogleMapsResults(job.apify_run_id as string);
       return raws
         .map((r) => normaliseGoogleMapsItem(r, niche))
