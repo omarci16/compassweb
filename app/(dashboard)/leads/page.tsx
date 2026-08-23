@@ -6,7 +6,9 @@ import { Inbox } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export default async function LeadsPage() {
-  const leads = await getLeads({ limit: 200 });
+  // Filtering and bulk delete happen client-side over this set, so the limit is
+  // also the cleanup ceiling — you cannot delete a junk lead you cannot see.
+  const leads = await getLeads({ limit: 500 });
 
   return (
     <div className="space-y-6">
