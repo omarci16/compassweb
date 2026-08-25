@@ -30,6 +30,7 @@ import {
 } from "@/lib/types/app.types";
 import { SITUATION_LABELS_HU } from "@/lib/email-studio/situation-labels";
 import { SAMPLE_LEADS } from "@/lib/email-studio/sample-leads";
+import { EmailPreviewFrame, EmailPreviewSkeleton } from "@/components/email-studio/EmailPreviewFrame";
 
 const NICHES = Object.keys(PROSPECTING_NICHE_LABELS_HU) as ProspectingNiche[];
 const SITUATIONS = Object.keys(SITUATION_LABELS_HU) as VoiceSituation[];
@@ -125,6 +126,7 @@ export function VoiceProfileEditor({
   const [previewError, setPreviewError] = useState<string | null>(null);
 
   const isCold = form.situation === "cold_first_touch" || form.situation === "cold_followup";
+  const selectedSampleLead = SAMPLE_LEADS.find((l) => l.id === sampleLeadId) ?? null;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -421,16 +423,14 @@ export function VoiceProfileEditor({
 
                 {previewError && <p className="text-sm text-destructive">{previewError}</p>}
 
-                {preview && (
-                  <div className="rounded-lg border border-border p-4 space-y-2 bg-muted/20">
-                    <div className="text-sm font-medium">{preview.email_subject}</div>
-                    <div
-                      className="text-sm leading-relaxed prose-sm"
-                      dangerouslySetInnerHTML={{
-                        __html: preview.email_body_html ?? preview.email_body ?? "",
-                      }}
-                    />
-                  </div>
+                {previewing && <EmailPreviewSkeleton />}
+
+                {!previewing && preview && (
+                  <EmailPreviewFrame
+                    to={selectedSampleLead?.contact_name ?? selectedSampleLead?.company_name ?? null}
+                    subject={preview.email_subject ?? ""}
+                    bodyHtml={preview.email_body_html ?? preview.email_body ?? ""}
+                  />
                 )}
               </>
             )}
