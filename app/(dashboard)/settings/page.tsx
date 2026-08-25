@@ -50,7 +50,8 @@ export default async function SettingsPage() {
         <CardContent className="space-y-3 text-sm">
           {[
             { name: "Supabase", env: "NEXT_PUBLIC_SUPABASE_URL", role: "Database, auth, storage" },
-            { name: "Anthropic", env: "ANTHROPIC_API_KEY", role: "All AI drafting and scoring" },
+            { name: "Anthropic", env: "ANTHROPIC_API_KEY", role: "Lead scoring, enrichment, pain audits, blueprints" },
+            { name: "OpenAI", env: "OPENAI_API_KEY", role: "Email Studio — client-facing email drafting" },
             { name: "Apify", env: "APIFY_API_TOKEN", role: "Lead enrichment" },
             { name: "Resend", env: "RESEND_API_KEY", role: "Outbound email" },
             { name: "Inngest", env: "INNGEST_EVENT_KEY", role: "Background jobs" },

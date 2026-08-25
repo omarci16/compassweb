@@ -4,32 +4,36 @@
 // what their site COULD look like. The visual is the hook; the copy must
 // frame it warmly, constructively, and never insult their current site.
 //
-// Quality bar:
-//   - Native Hungarian, formal "Ön/Önök", zero translation tells
-//   - Constructive pain framing: never "weboldaluk gyenge" — instead
-//     "úgy láttuk, hogy X-szel sokkal több vendéget tudnának elérni"
-//   - Reference the visual we made (or are making) for them as a gift
-//   - Soft CTA: 15 perces, kötelezettség nélküli beszélgetés
-//   - Never pushy, never salesy, never AI-ish (no "remélem jól van",
-//     no "lehetőséget szeretnék felvázolni", no "értéket teremteni")
-//   - The pain audit informs WHAT to mention, but at most ONE pain point
-//     gets named — the rest is implied by the visual
+// Email Studio split (see lib/email-studio/resolve-voice-profile.ts):
+//   IMMUTABLE (this file, never overridden by a Voice Profile) — the
+//   business/brand-safety rules that must hold regardless of tone: never
+//   insult the existing site, name at most one pain point, always introduce
+//   the visual as a gift, the fixed structural ordering, the HTML tag
+//   restriction, the spintax mechanism, the JSON output contract, and — for
+//   the upgrade track — the "verified signals only" anti-hallucination rule.
+//   TRAINABLE (lib/ai/prompt-compose.ts + a resolved Voice Profile) —
+//   register (magázás/tegezés), word count, banned phrases, tone
+//   descriptors, few-shot examples, signature, visual style.
 
 import { z } from "zod";
-import type { OfferTrack, ProspectingNiche } from "@/lib/types/app.types";
+import type { EmailVoiceProfile, OfferTrack, ProspectingNiche } from "@/lib/types/app.types";
+import { buildVoiceBlock } from "@/lib/ai/prompt-compose";
 
 // One low-risk spintax instruction shared by both tracks. Emitting a single
 // {a|b} group in the CTA gives Phase E send-time wording variation for
 // deliverability without risking the crafted body (the AI writes both variants).
 const SPINTAX_NOTE = `SPINTAX (deliverability): A soft CTA mondatában (és CSAK ott) adj két, jelentésében azonos magyar megfogalmazást spintax formátumban: {első változat|második változat}. Pontosan egy ilyen csoport legyen az egész levélben, mindkét változat nyelvtanilag helyes és kicserélhető. Sehol máshol ne használj kapcsos zárójelet.`;
 
-export const COLD_OUTREACH_SYSTEM = `Te a Compass Marketing Kft. (kis magyar digitális ügynökség) szövegírója vagy. Magyar nyelvű hideg outreach e-maileket írsz, amelyek mindig egy ingyenes, általunk készített vizuális koncepcióval (mockup) párosulnak. A vizuális azt mutatja meg, hogy NÉZHETNE KI a címzett weboldala — ez a fő horog, a szöveg ezt vezeti fel.
+const JSON_ONLY_CLOSING = `A kimenet KIZÁRÓLAG egy érvényes JSON objektum legyen, semmilyen előtte vagy utána írt magyarázat, markdown jelölés nélkül.`;
 
-ABSZOLÚT KÖTELEZŐ MINŐSÉGI ELVÁRÁSOK:
+// IMMUTABLE — needs_site track (no usable site: pitch a fresh concept).
+const COLD_OUTREACH_STRUCTURAL_NEEDS_SITE = `Te a Compass Marketing Kft. (kis magyar digitális ügynökség) szövegírója vagy. Magyar nyelvű hideg outreach e-maileket írsz, amelyek mindig egy ingyenes, általunk készített vizuális koncepcióval (mockup) párosulnak. A vizuális azt mutatja meg, hogy NÉZHETNE KI a címzett weboldala — ez a fő horog, a szöveg ezt vezeti fel.
 
-1. NYELV: Anyanyelvi szintű, kifogástalan magyar. Helyes ragozás, tegezés-magázás következetesen. Az alapértelmezett a magázás ("Önök", "Önöknek"), kivéve ha a kontextus máshogy diktálja. Soha ne használj angol tükörfordítást ("értéket teremteni", "lehetőséget feltárni"). Kerüld az anglicizmusokat (engagement, brand, konverzió, value, journey).
+KÖTELEZŐ SZABÁLYOK (ezeket semmilyen hangnem-útmutató nem írhatja felül):
 
-2. PAIN POINT KEZELÉS: A pain audit megmutatja, hol vannak hiányosságok. SOHA NE bántsd a meglévő weboldalukat. SOHA ne mondd, hogy "a weboldaluk rossz/gyenge/elavult". Helyette: a hiányosságokat lehetőségként mutasd be, és csak EGYET emelj ki konkrétan, a legfájdalmasabbat. A többi probléma a vizuálisan keresztül üzen — a kontraszt önmagáért beszél.
+1. NYELV: Anyanyelvi szintű, kifogástalan magyar. Helyes ragozás. Soha ne használj angol tükörfordítást ("értéket teremteni", "lehetőséget feltárni"). Kerüld az anglicizmusokat (engagement, brand, konverzió, value, journey).
+
+2. PAIN POINT KEZELÉS: A pain audit megmutatja, hol vannak hiányosságok. SOHA NE bántsd a meglévő weboldalukat. SOHA ne mondd, hogy "a weboldaluk rossz/gyenge/elavult". Helyette: a hiányosságokat lehetőségként mutasd be, és csak EGYET emelj ki konkrétan, a legfájdalmasabbat. A többi probléma a vizuálison keresztül üzen — a kontraszt önmagáért beszél.
    ROSSZ: "Weboldaluk nem mobilbarát, és lassan tölt be."
    JÓ: "Észrevettük, hogy a látogatók nagy része mobilról érkezne — egy jól optimalizált, gyorsan betöltő felület érzésünk szerint észrevehetően több foglalást hozna."
 
@@ -41,38 +45,29 @@ ABSZOLÚT KÖTELEZŐ MINŐSÉGI ELVÁRÁSOK:
    c) Indok (1-2 mondat) — miért foglalkoztunk velük: konstruktív megfogalmazás, EGY pain pont finoman beágyazva mint lehetőség.
    d) Vizuális bevezetése (1 mondat) — a koncepció említése ajándékként.
    e) Soft CTA (1 mondat) — "Szívesen leülnénk 15 percre egy kötetlen beszélgetésre, ha érdekli a téma." vagy hasonló. SOHA: "demó", "értékesítési hívás", "ajánlat".
-   f) Aláírás — "Üdvözlettel," új sorban "Compass Marketing".
+   f) Aláírás — az alábbi kiegészítő hangnem-útmutatóban megadott aláírással zárd, saját sorban.
 
-5. TILTÓ LISTA (ezeket SOHA):
-   - "Remélem, levelem jó egészségben éri." / "Remélem, jól van."
-   - "Bemutatkozni szeretnék..." / "Engedjék meg, hogy bemutatkozzam..."
-   - "Lehetőséget látunk arra, hogy..." (üres ügynökségi szöveg)
-   - "A mai gyorsan változó digitális világban..."
-   - Felkiáltójelek mondatok végén (az üdvözlésen kívül).
-   - Emoji.
-   - Bekezdés végén pont nélküli felsorolás.
-   - "+" kötőszó helyett.
+5. Felkiáltójel csak a megszólításban, sehol máshol. Emoji tilos. Bekezdés végén pont nélküli felsorolás tilos. "+" kötőszó helyett tilos.
 
-6. HOSSZ: A teljes test (megszólítástól aláírásig) 90 és 140 szó között. Tömör, nem szétfolyó. Rövid mondatok, egy-egy hosszabb a ritmusért.
+6. HTML FORMÁZÁS: Az email_body_html kimenetben csak <p> és <strong> HTML tageket használj. Minden bekezdés saját <p> tagben. Soha ne tartalmazzon képet vagy aláírás-grafikát — azokat utólag illesztjük be.
 
-7. HTML FORMÁZÁS: Az email_body_html kimenetben csak <p> és <strong> HTML tageket használj. Minden bekezdés saját <p> tagben. Soha ne tartalmazzon képet vagy aláírás-grafikát — azokat utólag illesztjük be.
+7. ${SPINTAX_NOTE}
 
-8. ${SPINTAX_NOTE}
+${JSON_ONLY_CLOSING}`;
 
-A kimenet KIZÁRÓLAG egy érvényes JSON objektum legyen, semmilyen előtt vagy után írt magyarázat, markdown jelölés nélkül.`;
-
+// IMMUTABLE — upgrade track (working site: pitch concrete, grounded improvements).
 // Track 2 — "upgrade": the recipient already has a working site. We do NOT pitch
 // a rebuild; we point out concrete ways it could convert more, grounded ONLY in
 // VERIFIED signals (the 2.0 honesty rule). Never insult the existing site.
-export const COLD_OUTREACH_UPGRADE_SYSTEM = `Te a Compass Marketing Kft. (kis magyar digitális ügynökség) szövegírója vagy. Magyar nyelvű hideg outreach e-maileket írsz olyan vállalkozásoknak, amelyeknek MÁR VAN működő weboldaluk. A cél nem az oldal lecserélése, hanem hogy megmutassunk 2-3 konkrét, kézzelfogható lehetőséget, amivel az oldal több érdeklődőt/foglalást hozhatna.
+const COLD_OUTREACH_STRUCTURAL_UPGRADE = `Te a Compass Marketing Kft. (kis magyar digitális ügynökség) szövegírója vagy. Magyar nyelvű hideg outreach e-maileket írsz olyan vállalkozásoknak, amelyeknek MÁR VAN működő weboldaluk. A cél nem az oldal lecserélése, hanem hogy megmutassunk 2-3 konkrét, kézzelfogható lehetőséget, amivel az oldal több érdeklődőt/foglalást hozhatna.
 
-ABSZOLÚT KÖTELEZŐ MINŐSÉGI ELVÁRÁSOK:
+KÖTELEZŐ SZABÁLYOK (ezeket semmilyen hangnem-útmutató nem írhatja felül):
 
-1. NYELV: Anyanyelvi szintű, kifogástalan magyar, következetes magázás ("Önök"). Semmi angol tükörfordítás, semmi anglicizmus (engagement, brand, konverzió, value, journey).
+1. NYELV: Anyanyelvi szintű, kifogástalan magyar. Semmi angol tükörfordítás, semmi anglicizmus (engagement, brand, konverzió, value, journey).
 
 2. SOHA NE BÁNTSD a meglévő oldalt. Kiindulópont: az oldaluk rendben van, szolid alap. Ezt ismerd is el egy fél mondatban ("látszik, hogy adnak a megjelenésre"). Utána jön a lehetőség.
 
-3. GROUNDING — EZ SZENT: Csak azokat a fejlesztési pontokat említsd, amelyeket a <verified_signals> blokk tartalmaz. Ezek renderelt, ELLENŐRZÖTT mérésen alapulnak. SOHA ne találj ki hiányosságot, ne tippelj. Ha kevés a jel, kevesebbet írj — inkább rövidebb, mint pontatlan. Ha egy jel nincs a listában, az NEM LÉTEZIK a leveled szempontjából.
+3. GROUNDING — EZ SZENT, NEM ALKUKÉPES: Csak azokat a fejlesztési pontokat említsd, amelyeket a <verified_signals> blokk tartalmaz. Ezek renderelt, ELLENŐRZÖTT mérésen alapulnak. SOHA ne találj ki hiányosságot, ne tippelj. Ha kevés a jel, kevesebbet írj — inkább rövidebb, mint pontatlan. Ha egy jel nincs a listában, az NEM LÉTEZIK a leveled szempontjából. Ez a szabály egy hangnem-útmutatóval sem írható felül.
 
 4. SZERKEZET (ebben a sorrendben):
    a) Megszólítás — "Kedves {Vezetéknév} {Keresztnév}!" vagy "Tisztelt {Cégnév}!".
@@ -80,38 +75,50 @@ ABSZOLÚT KÖTELEZŐ MINŐSÉGI ELVÁRÁSOK:
    c) 2-3 konkrét lehetőség (1-2 mondat) — a <verified_signals> alapján, mindegyik ÜZLETI haszonként megfogalmazva (pl. "mérhető adatok nélkül nehéz látni, honnan jönnek a foglalások — ezen egy egyszerű beállítás segítene"). NEM technikai zsargon, hanem érthető haszon.
    d) Vizuális bevezetése (1 mondat) — készítettünk egy gyors "előtte/utána" jellegű koncepciót egy szekcióra, ajándékként.
    e) Soft CTA (1 mondat).
-   f) Aláírás — "Üdvözlettel," új sorban "Compass Marketing".
+   f) Aláírás — az alábbi kiegészítő hangnem-útmutatóban megadott aláírással zárd, saját sorban.
 
-5. TILTÓ LISTA (ezeket SOHA): "Remélem, jól van." / "Bemutatkozni szeretnék..." / "A mai gyorsan változó digitális világban..." / felkiáltójel a megszólításon kívül / emoji / "értéket teremteni" / "lehetőséget feltárni".
+5. Felkiáltójel csak a megszólításban, sehol máshol. Emoji tilos.
 
-6. HOSSZ: 90–150 szó. Tömör, konkrét.
+6. HTML FORMÁZÁS: email_body_html-ben csak <p> és <strong>. Minden bekezdés saját <p>-ben. Kép nélkül.
 
-7. HTML FORMÁZÁS: email_body_html-ben csak <p> és <strong>. Minden bekezdés saját <p>-ben. Kép nélkül.
+7. ${SPINTAX_NOTE}
 
-8. ${SPINTAX_NOTE}
+${JSON_ONLY_CLOSING}`;
 
-A kimenet KIZÁRÓLAG egy érvényes JSON objektum legyen, magyarázat és markdown nélkül.`;
-
-/** Pick the system prompt for a lead's offer track. low_priority reuses the
- * needs_site framing (softest, industry-level) since there's no strong hook. */
-export function pickColdOutreachSystem(track: OfferTrack | null | undefined): string {
-  return track === "upgrade" ? COLD_OUTREACH_UPGRADE_SYSTEM : COLD_OUTREACH_SYSTEM;
+/** Pick the immutable structural half for a lead's offer track. low_priority
+ * reuses the needs_site framing (softest, industry-level) since there's no
+ * strong hook. */
+function structuralSystem(track: OfferTrack | null | undefined): string {
+  return track === "upgrade" ? COLD_OUTREACH_STRUCTURAL_UPGRADE : COLD_OUTREACH_STRUCTURAL_NEEDS_SITE;
 }
 
-// Follow-up touches (2nd/3rd email). Brief, non-pushy, references the earlier
-// concept without repeating it. Same JSON schema as the first touch.
-export const COLD_FOLLOWUP_SYSTEM = `Te a Compass Marketing Kft. szövegírója vagy. Egy KÖVETŐ (follow-up) magyar nyelvű e-mailt írsz olyan vállalkozásnak, akinek korábban már küldtünk egy első megkeresést egy ingyenes vizuális koncepcióval — de még nem válaszoltak.
+/** Compose the immutable structural rules for `track` with the trainable
+ * voice guidance from a resolved Voice Profile. The structural half always
+ * wins — buildVoiceBlock's output is explicitly framed as non-overriding. */
+export function composeColdOutreachSystem(
+  track: OfferTrack | null | undefined,
+  profile: EmailVoiceProfile,
+): string {
+  return `${structuralSystem(track)}\n\n${buildVoiceBlock(profile)}`;
+}
 
-ABSZOLÚT KÖTELEZŐ:
-1. NAGYON RÖVID: 40–70 szó. Egy follow-up nem ismétli meg az első levelet.
+// IMMUTABLE — follow-up touches (2nd/3rd email). Same JSON schema as first touch.
+const COLD_FOLLOWUP_STRUCTURAL = `Te a Compass Marketing Kft. szövegírója vagy. Egy KÖVETŐ (follow-up) magyar nyelvű e-mailt írsz olyan vállalkozásnak, akinek korábban már küldtünk egy első megkeresést egy ingyenes vizuális koncepcióval — de még nem válaszoltak.
+
+KÖTELEZŐ SZABÁLYOK (ezeket semmilyen hangnem-útmutató nem írhatja felül):
+1. Egy follow-up nem ismétli meg az első levelet.
 2. Nem tolakodó, nem számonkérő. Semmi "nem kaptam választ", "csak rákérdeznék". Helyette természetes, könnyed emlékeztető.
-3. Magyar, magázás ("Önök"), zéró anglicizmus, zéró emoji, felkiáltójel csak a megszólításban.
+3. Magyar, zéró anglicizmus, zéró emoji, felkiáltójel csak a megszólításban.
 4. Hivatkozz finoman a korábban küldött koncepcióra ("a múltkor küldött koncepció még áll").
 5. Egyetlen soft CTA — 15 perc, kötetlen beszélgetés.
-6. Aláírás: "Üdvözlettel," új sorban "Compass Marketing".
+6. Aláírás — az alábbi kiegészítő hangnem-útmutatóban megadott aláírással zárd.
 7. email_body_html: csak <p> és <strong>. ${SPINTAX_NOTE}
 
 Kimenet: KIZÁRÓLAG a kért JSON, magyarázat nélkül.`;
+
+export function composeColdFollowupSystem(profile: EmailVoiceProfile): string {
+  return `${COLD_FOLLOWUP_STRUCTURAL}\n\n${buildVoiceBlock(profile)}`;
+}
 
 export function coldFollowupUserPrompt(input: ColdOutreachInput & { touch_number: number }): string {
   return `<recipient>
@@ -126,7 +133,7 @@ Ez a(z) ${input.touch_number}. érintés (follow-up). Az első levélben egy ing
 Adj vissza pontosan ezt a JSON struktúrát, semmi mást:
 {
   "email_subject": "<rövid magyar tárgy, max 55 karakter, akár 'Re:' jellegű, de ne írj 'Re:'-t elé>",
-  "email_body_html": "<40–70 szavas follow-up, csak <p> és <strong> tagek, a fenti szabályokkal>",
+  "email_body_html": "<follow-up, csak <p> és <strong> tagek, a fenti szabályokkal>",
   "email_body_text": "<ugyanaz sima szövegként>",
   "visual_concept": "<1 mondat: ugyanaz a koncepció, amit korábban ígértünk — belső log>",
   "primary_pain_point_used": "<belső log>",
@@ -184,7 +191,7 @@ ${input.enrichment_summary ?? "(nincs enrichment adat)"}
 Adj vissza pontosan ezt a JSON struktúrát, semmi mást:
 {
   "email_subject": "<rövid, kíváncsiságot keltő magyar tárgy, max 55 karakter, emoji nélkül, clickbait nélkül; ideálisan a vizuálra utal (pl. 'Egy gyors koncepció a {Cégnév}-nek') vagy az iparágra szabott>",
-  "email_body_html": "<a teljes levél törzse HTML-ben, csak <p> és <strong> tagekkel, megszólítástól aláírásig, a fenti szerkezet pontosan, 90–140 szó>",
+  "email_body_html": "<a teljes levél törzse HTML-ben, csak <p> és <strong> tagekkel, megszólítástól aláírásig, a fenti szerkezet pontosan>",
   "email_body_text": "<ugyanaz, sima szövegként, sortörésekkel, HTML nélkül — fallback>",
   "visual_concept": "<2–3 mondatos magyar leírás arról, milyen vizuális koncepciót KÉSZÍTÜNK ehhez a céghez: stílus (modern, minimal, premium, meleg, organikus stb.), domináns szín(ek), elhelyezés, hangulat, mit kell mutatnia — pl. egy mockup laptop képernyőn, fent a cégnévvel, alatta a fő szolgáltatással, jobbra egy releváns vizuális (étterem esetén étel, fogászat esetén tiszta klinika stb.)>",
   "primary_pain_point_used": "<egy rövid magyar kifejezés arról, melyik egyetlen pain pontot építettük be a szövegbe — belső log>",
@@ -204,3 +211,31 @@ export const ColdOutreachSchema = z.object({
 });
 
 export type ColdOutreachResult = z.infer<typeof ColdOutreachSchema>;
+
+// Hand-written JSON Schema mirror of ColdOutreachSchema for OpenAI Structured
+// Outputs (strict mode requires additionalProperties:false and every key in
+// `required` — zod-to-json-schema output doesn't reliably satisfy that, so this
+// is maintained by hand). Keep its keys in sync with ColdOutreachSchema's shape;
+// __tests__ asserts they match.
+export const ColdOutreachJsonSchema = {
+  type: "object",
+  properties: {
+    email_subject: { type: "string" },
+    email_body_html: { type: "string" },
+    email_body_text: { type: "string" },
+    visual_concept: { type: "string" },
+    primary_pain_point_used: { type: "string" },
+    personalization_hook: { type: "string" },
+    tone_notes: { type: "string" },
+  },
+  required: [
+    "email_subject",
+    "email_body_html",
+    "email_body_text",
+    "visual_concept",
+    "primary_pain_point_used",
+    "personalization_hook",
+    "tone_notes",
+  ],
+  additionalProperties: false,
+} as const;

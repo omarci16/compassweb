@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Archive,
   Mail,
+  Wand2,
   Banknote,
   BarChart3,
   Settings,
@@ -25,6 +26,7 @@ const NAV = [
   { href: "/projects", label: "Projects", icon: ClipboardList },
   { href: "/archive", label: "Archive", icon: Archive },
   { href: "/outreach", label: "Outreach", icon: Mail },
+  { href: "/email-studio", label: "Email Studio", icon: Wand2 },
   { href: "/revenue", label: "Revenue", icon: Banknote },
   { href: "/intelligence", label: "Intelligence", icon: BarChart3 },
 ];

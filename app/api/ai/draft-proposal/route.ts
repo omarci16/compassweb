@@ -2,20 +2,50 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/data/queries";
-import { callClaude, extractJson } from "@/lib/ai/anthropic";
+import { callOpenAIStructured } from "@/lib/openai/client";
 import {
-  DRAFT_PROPOSAL_SYSTEM,
+  DraftProposalJsonSchema,
+  DraftProposalSchema,
+  composeProposalSystem,
   draftProposalUserPrompt,
 } from "@/lib/ai/prompts/draft-proposal";
-import type { DraftProposalResult } from "@/lib/types/app.types";
+import { resolveVoiceProfile } from "@/lib/email-studio/resolve-voice-profile";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { DraftProposalResult, EmailVoiceProfile } from "@/lib/types/app.types";
 
 const Input = z.object({ deal_id: z.string() });
+
+// Used only when OPENAI_API_KEY is set but Supabase isn't configured (local
+// prompt testing without a DB) — there's no email_voice_profiles table to
+// resolve against, so this stands in for the seeded "proposal" default.
+const FALLBACK_PROPOSAL_VOICE_PROFILE: EmailVoiceProfile = {
+  id: "fallback-no-supabase",
+  created_at: "1970-01-01T00:00:00Z",
+  updated_at: "1970-01-01T00:00:00Z",
+  name: "Fallback (no Supabase configured)",
+  situation: "proposal",
+  niche: null,
+  offer_track: null,
+  is_default: true,
+  active: true,
+  tone_traits: {},
+  voice_description: "Magabiztos, meleg, professzionális hangnem.",
+  few_shot_examples: [],
+  banned_phrases: [],
+  required_elements: [],
+  word_count_min: null,
+  word_count_max: null,
+  signature_block: "Üdvözlettel,\nCompass Marketing",
+  visual_style_prompt: null,
+  model_override: null,
+  created_by: null,
+};
 
 export async function POST(req: Request) {
   const parsed = Input.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) return NextResponse.json({ error: "Bad input" }, { status: 400 });
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return demoDraft();
   }
 
@@ -32,7 +62,7 @@ export async function POST(req: Request) {
       ? await supabase.from("leads").select("*").eq("id", deal.lead_id).single()
       : { data: null };
 
-    const result = await draft({
+    const result = await draft(supabase, {
       client_name: lead?.contact_name ?? null,
       company_name: lead?.company_name ?? "",
       niche: lead?.niche ?? null,
@@ -49,7 +79,7 @@ export async function POST(req: Request) {
 
   // Demo path
   return NextResponse.json(
-    await draft({
+    await draft(null, {
       client_name: "Dr. Kovács Anna",
       company_name: "Kovács Dental",
       niche: "dentist",
@@ -61,13 +91,22 @@ export async function POST(req: Request) {
   );
 }
 
-async function draft(input: Parameters<typeof draftProposalUserPrompt>[0]): Promise<DraftProposalResult> {
-  const text = await callClaude({
-    system: DRAFT_PROPOSAL_SYSTEM,
+async function draft(
+  supabase: SupabaseClient | null,
+  input: Parameters<typeof draftProposalUserPrompt>[0],
+): Promise<DraftProposalResult> {
+  const profile = supabase
+    ? await resolveVoiceProfile(supabase, { situation: "proposal", niche: input.niche })
+    : FALLBACK_PROPOSAL_VOICE_PROFILE;
+
+  return callOpenAIStructured({
+    system: composeProposalSystem(profile),
     user: draftProposalUserPrompt(input),
     maxTokens: 1500,
+    schemaName: "proposal_email",
+    jsonSchema: DraftProposalJsonSchema,
+    zodSchema: DraftProposalSchema,
   });
-  return extractJson<DraftProposalResult>(text);
 }
 
 function demoDraft() {

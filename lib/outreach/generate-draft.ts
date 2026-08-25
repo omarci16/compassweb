@@ -1,19 +1,23 @@
 // Generate one AI outreach draft payload for a lead — the shared core behind
-// both the single "generate + persist" route and the batch generator. Selects
-// the track's system prompt, grounds the upgrade pitch in verified signals,
-// expands spintax, and returns a row ready to insert into outreach_drafts.
+// both the single "generate + persist" route and the batch generator. Resolves
+// the applicable Voice Profile, composes the immutable structural rules with
+// its trainable voice, grounds the upgrade pitch in verified signals, expands
+// spintax, and returns a row ready to insert into outreach_drafts.
 //
 // Never sends. Persistence + human approval happen at the call site.
 
-import { callClaude, extractJsonWithSchema } from "@/lib/ai/anthropic";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { callOpenAIStructured } from "@/lib/openai/client";
 import {
-  COLD_FOLLOWUP_SYSTEM,
+  ColdOutreachJsonSchema,
   ColdOutreachSchema,
   coldFollowupUserPrompt,
   coldOutreachUserPrompt,
-  pickColdOutreachSystem,
+  composeColdFollowupSystem,
+  composeColdOutreachSystem,
 } from "@/lib/ai/prompts/cold-outreach";
 import { renderDraftBody, verifiedSignalLabels } from "@/lib/outreach/draft-content";
+import { resolveVoiceProfile } from "@/lib/email-studio/resolve-voice-profile";
 import type { OfferTrack, PainSignal, ProspectingNiche } from "@/lib/types/app.types";
 
 export interface GenerateDraftOptions {
@@ -21,6 +25,8 @@ export interface GenerateDraftOptions {
   touchNumber?: number;
   /** Links the draft to its re_engagement_sequences row. */
   sequenceId?: string | null;
+  /** Stamped onto the draft when generated through a Campaign's batch push. */
+  campaignId?: string | null;
 }
 
 export interface DraftLeadInput {
@@ -48,6 +54,8 @@ export interface OutreachDraftInsert {
   spintax_variant: string | null;
   touch_number: number;
   sequence_id: string | null;
+  campaign_id: string | null;
+  voice_profile_id: string;
   status: "draft";
   ai_meta: {
     primary_pain_point_used: string;
@@ -57,6 +65,7 @@ export interface OutreachDraftInsert {
 }
 
 export async function generateDraftPayload(
+  supabase: SupabaseClient,
   lead: DraftLeadInput,
   opts: GenerateDraftOptions = {},
 ): Promise<OutreachDraftInsert> {
@@ -66,6 +75,12 @@ export async function generateDraftPayload(
   const verified = verifiedSignalLabels(
     Array.isArray(lead.pain_signals) ? (lead.pain_signals as unknown as PainSignal[]) : [],
   );
+
+  const profile = await resolveVoiceProfile(supabase, {
+    situation: isFollowup ? "cold_followup" : "cold_first_touch",
+    niche: lead.niche,
+    offerTrack: isFollowup ? null : track,
+  });
 
   const promptInput = {
     company_name: lead.company_name,
@@ -80,15 +95,17 @@ export async function generateDraftPayload(
     verified_signals: verified,
   };
 
-  const text = await callClaude({
-    system: isFollowup ? COLD_FOLLOWUP_SYSTEM : pickColdOutreachSystem(track),
+  const result = await callOpenAIStructured({
+    system: isFollowup ? composeColdFollowupSystem(profile) : composeColdOutreachSystem(track, profile),
     user: isFollowup
       ? coldFollowupUserPrompt({ ...promptInput, touch_number: touchNumber })
       : coldOutreachUserPrompt(promptInput),
     maxTokens: isFollowup ? 800 : 1400,
+    schemaName: "cold_outreach_email",
+    jsonSchema: ColdOutreachJsonSchema,
+    zodSchema: ColdOutreachSchema,
   });
 
-  const result = extractJsonWithSchema(text, ColdOutreachSchema);
   const rendered = renderDraftBody(result.email_body_html, result.email_body_text);
 
   return {
@@ -102,6 +119,8 @@ export async function generateDraftPayload(
     spintax_variant: rendered.spintax_variant,
     touch_number: touchNumber,
     sequence_id: opts.sequenceId ?? null,
+    campaign_id: opts.campaignId ?? null,
+    voice_profile_id: profile.id,
     status: "draft",
     ai_meta: {
       primary_pain_point_used: result.primary_pain_point_used,

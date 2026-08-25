@@ -123,7 +123,7 @@ export const outreachSequenceTick = inngest.createFunction(
         }
 
         try {
-          const payload = await generateDraftPayload(lead, {
+          const payload = await generateDraftPayload(supabase, lead, {
             touchNumber: plan.touchNumber,
             sequenceId: seq.id,
           });

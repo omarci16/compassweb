@@ -4,30 +4,44 @@
 // premium WEBSITE MOCKUP that the founders can drop into a cold outreach
 // email — not abstract marketing art.
 //
-// Hard constraints baked into every prompt:
-//   - Style: photorealistic browser/device mockup (NOT illustration)
-//   - Composition: full-bleed website hero shot, viewport-style framing
-//   - Quality: agency-grade, no AI-tells (warped text, mangled logos)
-//   - Text: minimal, readable, in Hungarian if any words are needed
-//   - Aspect ratio: 16:9 or 4:3, light/airy unless the niche dictates otherwise
+// The founders still paste the returned prompt into ChatGPT's image UI
+// themselves — this generates the prompt TEXT only, no image API call.
+//
+// Email Studio split: IMMUTABLE (this file) = the anti-AI-tell constraints,
+// aspect-ratio/lighting requirement, and the fixed terminal phrase.
+// TRAINABLE (a resolved cold_first_touch Voice Profile's visual_style_prompt)
+// = the style descriptor, instead of left for the model to invent per-lead.
 
-import type { ProspectingNiche } from "@/lib/types/app.types";
+import type { EmailVoiceProfile, ProspectingNiche } from "@/lib/types/app.types";
 
-export const IMAGE_PROMPT_SYSTEM = `You craft prompts for image generation models that produce premium, photorealistic website mockup hero images for a Hungarian digital agency's cold outreach.
+const IMAGE_PROMPT_STRUCTURAL = `You craft prompts for image generation models that produce premium, photorealistic website mockup hero images for a Hungarian digital agency's cold outreach.
 
 Your output is a SINGLE English-language prompt that the user will paste directly into ChatGPT's image generator (or a comparable tool). It must:
 
 1. Be specific to the recipient's business — niche, vibe, real services if known.
 2. Describe a clean modern WEBSITE MOCKUP (rendered on a laptop or as a flat hero shot), NOT marketing illustration or abstract art.
-3. Specify a clear visual style (e.g. "minimal Scandinavian", "warm bistro-luxe", "clinical premium", "earthy organic") that matches the niche.
-4. Specify dominant colours (2–3 max, with concrete hex or natural-language names).
-5. Specify typography vibe ("modern serif headline, clean sans-serif body").
-6. Include any Hungarian copy that should appear (max 1 headline + 1 short subline) so the AI doesn't invent broken Hungarian or English placeholder text.
-7. Forbid AI-tells: explicitly tell the model NO warped text, NO fake logos, NO extra hands/fingers, NO cluttered backgrounds.
-8. Specify the aspect ratio and lighting (soft natural light, studio light, golden-hour, etc.).
-9. End with: "High-quality, agency-grade, photorealistic." — this is a fixed terminal phrase.
+3. Specify dominant colours (2–3 max, with concrete hex or natural-language names).
+4. Specify typography vibe ("modern serif headline, clean sans-serif body").
+5. Include any Hungarian copy that should appear (max 1 headline + 1 short subline) so the AI doesn't invent broken Hungarian or English placeholder text.
+6. Forbid AI-tells: explicitly tell the model NO warped text, NO fake logos, NO extra hands/fingers, NO cluttered backgrounds.
+7. Specify the aspect ratio and lighting (soft natural light, studio light, golden-hour, etc.).
+8. End with: "High-quality, agency-grade, photorealistic." — this is a fixed terminal phrase.
 
 Return ONLY the prompt as plain text — no JSON, no labels, no preface, no "Sure, here is..." style intro. Just the prompt ready to paste.`;
+
+/**
+ * Composes the immutable structural rules with a trainable visual style
+ * pulled from a resolved cold_first_touch Voice Profile. Falls back to
+ * letting the model choose a style per-lead (today's behavior) when the
+ * profile has no visual_style_prompt set.
+ */
+export function composeImagePromptSystem(profile: EmailVoiceProfile | null): string {
+  const style = profile?.visual_style_prompt?.trim();
+  if (!style) {
+    return `${IMAGE_PROMPT_STRUCTURAL}\n\nSpecify a clear visual style (e.g. "minimal Scandinavian", "warm bistro-luxe", "clinical premium", "earthy organic") that matches the niche.`;
+  }
+  return `${IMAGE_PROMPT_STRUCTURAL}\n\nVISUAL STYLE (trained, use this instead of inventing your own): ${style}`;
+}
 
 export interface ImagePromptInput {
   company_name: string;

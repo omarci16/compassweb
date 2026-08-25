@@ -1,7 +1,9 @@
 import type {
   AssetRow,
   DealRow,
+  EmailCampaignRow,
   EmailLogRow,
+  EmailVoiceProfileRow,
   InvoiceRow,
   LeadRow,
   OutreachDraftRow,
@@ -410,6 +412,50 @@ export type Suppression = Omit<SuppressionRow, "reason"> & {
 };
 
 export type SendingInbox = SendingInboxRow;
+
+// ---------------------------------------------------------------------
+// Email Studio — trainable Voice Profiles + Campaigns
+// ---------------------------------------------------------------------
+
+// Which drafting call site a Voice Profile applies to.
+export type VoiceSituation =
+  | "cold_first_touch"
+  | "cold_followup"
+  | "re_engagement"
+  | "proposal"
+  | "deal_followup";
+
+export interface ToneTraits {
+  register?: string; // e.g. "magazas" | "tegezes"
+  warmth?: string;
+  directness?: string;
+  humor?: string;
+  grounding?: string;
+  [key: string]: string | undefined;
+}
+
+export interface FewShotExample {
+  subject: string;
+  body_html: string;
+  note?: string;
+}
+
+export type EmailCampaignStatus = "draft" | "active" | "completed" | "archived";
+
+export type EmailVoiceProfile = Omit<
+  EmailVoiceProfileRow,
+  "tone_traits" | "few_shot_examples" | "situation"
+> & {
+  situation: VoiceSituation;
+  tone_traits: ToneTraits;
+  few_shot_examples: FewShotExample[];
+};
+
+export type EmailCampaign = Omit<EmailCampaignRow, "situation" | "status" | "lead_filter"> & {
+  situation: VoiceSituation;
+  status: EmailCampaignStatus;
+  lead_filter: Record<string, unknown>;
+};
 
 // ---------------------------------------------------------------------
 // API response shapes
