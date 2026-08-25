@@ -4,7 +4,9 @@
 import type {
   DailyBriefing,
   Deal,
+  EmailCampaign,
   EmailLog,
+  EmailVoiceProfile,
   Invoice,
   Lead,
   OutreachDraft,
@@ -789,6 +791,8 @@ export const demoOutreachDrafts: OutreachDraft[] = [
       personalization_hook: "daily menu concept",
       tone_notes: "warm, constructive",
     },
+    campaign_id: null,
+    voice_profile_id: null,
   },
   {
     id: "draft-2",
@@ -814,6 +818,107 @@ export const demoOutreachDrafts: OutreachDraft[] = [
       personalization_hook: "solid base, measurable data",
       tone_notes: "respectful, upgrade framing",
     },
+    campaign_id: null,
+    voice_profile_id: null,
+  },
+];
+
+// ---------------------------------------------------------------------
+// Email Studio — Voice Profiles + Campaigns
+// ---------------------------------------------------------------------
+
+export const demoVoiceProfiles: EmailVoiceProfile[] = [
+  {
+    id: "vp-default-needs-site",
+    created_at: daysAgo(60),
+    updated_at: daysAgo(60),
+    name: "Alapértelmezett — első megkeresés (nincs oldal)",
+    situation: "cold_first_touch",
+    niche: null,
+    offer_track: "needs_site",
+    is_default: true,
+    active: true,
+    tone_traits: { register: "magazas", warmth: "constructive", directness: "soft" },
+    voice_description:
+      "Anyanyelvi szintű, kifogástalan magyar, következetes magázás. A hiányosságokat lehetőségként mutatja be.",
+    few_shot_examples: [],
+    banned_phrases: ["Remélem, jól van", "Bemutatkozni szeretnék", "értéket teremteni"],
+    required_elements: [],
+    word_count_min: 90,
+    word_count_max: 140,
+    signature_block: "Üdvözlettel,\nCompass Marketing",
+    visual_style_prompt: null,
+    model_override: null,
+    created_by: null,
+  },
+  {
+    id: "vp-default-upgrade",
+    created_at: daysAgo(60),
+    updated_at: daysAgo(60),
+    name: "Alapértelmezett — első megkeresés (van oldal, upgrade)",
+    situation: "cold_first_touch",
+    niche: null,
+    offer_track: "upgrade",
+    is_default: true,
+    active: true,
+    tone_traits: { register: "magazas", warmth: "constructive", grounding: "verified_signals_only" },
+    voice_description: "Elismeri a meglévő oldal szolid alapját, majd 2-3 ellenőrzött jelre alapozott lehetőséget mutat.",
+    few_shot_examples: [],
+    banned_phrases: ["Remélem, jól van", "Bemutatkozni szeretnék"],
+    required_elements: [],
+    word_count_min: 90,
+    word_count_max: 150,
+    signature_block: "Üdvözlettel,\nCompass Marketing",
+    visual_style_prompt: null,
+    model_override: null,
+    created_by: null,
+  },
+  {
+    id: "vp-dental-playful",
+    created_at: daysAgo(12),
+    updated_at: daysAgo(2),
+    name: "Fogászat — barátságos, közvetlen",
+    situation: "cold_first_touch",
+    niche: "dental",
+    offer_track: "needs_site",
+    is_default: false,
+    active: true,
+    tone_traits: { register: "magazas", warmth: "friendly", directness: "direct" },
+    voice_description:
+      "Kicsit közvetlenebb, emberibb hangnem fogászatoknak — a páciensélményre fókuszál, nem a technológiára.",
+    few_shot_examples: [
+      {
+        subject: "Egy gyors ötlet az időpontfoglaláshoz",
+        body_html:
+          "<p>Kedves Dr. Kiss Anna!</p><p>Sok fogászati rendelő weboldalán azt látjuk, hogy a betegek még mindig telefonon egyeztetnek időpontot — pedig egy egyszerű online foglaló sok hívást megspórolna a recepciónak.</p><p>Készítettünk egy gyors koncepciót, hogyan nézhetne ez ki az Önök oldalán.</p><p>Üdvözlettel,<br/>Compass Marketing</p>",
+        note: "Konkrét, páciensélmény-fókuszú hook, nem technikai.",
+      },
+    ],
+    banned_phrases: ["Remélem, jól van", "digitális transzformáció"],
+    required_elements: [],
+    word_count_min: 80,
+    word_count_max: 130,
+    signature_block: "Üdvözlettel,\nCompass Marketing",
+    visual_style_prompt: "clinical premium — soft blues and whites, clean sans-serif, calm and trustworthy",
+    model_override: null,
+    created_by: null,
+  },
+];
+
+export const demoEmailCampaigns: EmailCampaign[] = [
+  {
+    id: "camp-1",
+    created_at: daysAgo(10),
+    updated_at: daysAgo(1),
+    name: "Fogászatok — 2026 Q3 push",
+    situation: "cold_first_touch",
+    niche: "dental",
+    offer_track: "needs_site",
+    voice_profile_id: "vp-dental-playful",
+    status: "active",
+    lead_filter: { niche: "dental", offer_track: "needs_site", min_score: 55 },
+    target_count: 24,
+    created_by: null,
   },
 ];
 

@@ -59,8 +59,8 @@ export async function POST(req: Request) {
       status: "draft",
     };
   } else {
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return NextResponse.json({ error: "ANTHROPIC_API_KEY not configured" }, { status: 503 });
+    if (!process.env.OPENAI_API_KEY) {
+      return NextResponse.json({ error: "OPENAI_API_KEY not configured" }, { status: 503 });
     }
     const { data: lead, error } = await supabase
       .from("leads")
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     }
     try {
-      row = { ...(await generateDraftPayload(lead as never)) };
+      row = { ...(await generateDraftPayload(supabase, lead as never)) };
     } catch (err) {
       console.error("draft generation failed", err);
       return NextResponse.json({ error: "AI request failed" }, { status: 500 });

@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/data/queries";
-import { callClaude } from "@/lib/ai/anthropic";
+import { callOpenAI } from "@/lib/openai/client";
 import {
-  IMAGE_PROMPT_SYSTEM,
+  composeImagePromptSystem,
   imagePromptUserPrompt,
 } from "@/lib/ai/prompts/image-prompt";
+import { resolveVoiceProfile } from "@/lib/email-studio/resolve-voice-profile";
 import type { ProspectingNiche } from "@/lib/types/app.types";
 
 const Input = z.object({
@@ -40,7 +41,7 @@ export async function POST(req: Request) {
       ok: true,
       demo: true,
       prompt:
-        "Demo mode — configure Supabase + Anthropic to generate a real image prompt.",
+        "Demo mode — configure Supabase + OpenAI to generate a real image prompt.",
     });
   }
 
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   const { data: lead, error } = await supabase
     .from("leads")
     .select(
-      "id, company_name, niche, gmaps_city, gmaps_category, website_url, enrichment_summary, package_interest",
+      "id, company_name, niche, gmaps_city, gmaps_category, website_url, enrichment_summary, package_interest, offer_track",
     )
     .eq("id", lead_id)
     .single();
@@ -57,16 +58,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Lead not found" }, { status: 404 });
   }
 
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return NextResponse.json(
-      { error: "ANTHROPIC_API_KEY not configured" },
+      { error: "OPENAI_API_KEY not configured" },
       { status: 500 },
     );
   }
 
   try {
-    const text = await callClaude({
-      system: IMAGE_PROMPT_SYSTEM,
+    const profile = await resolveVoiceProfile(supabase, {
+      situation: "cold_first_touch",
+      niche: lead.niche,
+      offerTrack: lead.offer_track,
+    });
+
+    const text = await callOpenAI({
+      system: composeImagePromptSystem(profile),
       user: imagePromptUserPrompt({
         company_name: lead.company_name,
         niche: (lead.niche as ProspectingNiche) ?? null,

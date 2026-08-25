@@ -6,8 +6,10 @@ import type {
   DailyBriefing,
   DailyBriefingItem,
   Deal,
+  EmailCampaign,
   EmailLog,
   EmailStatus,
+  EmailVoiceProfile,
   Invoice,
   Lead,
   LeadStatus,
@@ -16,16 +18,20 @@ import type {
   OfferTrack,
   Project,
   ScrapingJob,
+  VoiceSituation,
 } from "@/lib/types/app.types";
 import {
   demoDeals,
+  demoEmailCampaigns,
   demoEmailLog,
   demoInvoices,
   demoLeads,
   demoOutreachDrafts,
   demoProjects,
+  demoVoiceProfiles,
 } from "./demo";
 import { differenceInDays } from "date-fns";
+import { VOICE_PROFILE_COLUMNS } from "@/lib/email-studio/resolve-voice-profile";
 
 export function isSupabaseConfigured() {
   return Boolean(
@@ -905,4 +911,153 @@ export async function computeBriefing(
     }],
     suggested_first_action: first ? { label: `Open ${first.title.split("—")[0].trim()}`, href: first.href! } : null,
   };
+}
+
+// ---------------------------------------------------------------------
+// Email Studio — Voice Profiles + Campaigns
+// ---------------------------------------------------------------------
+
+export async function getVoiceProfiles(opts?: {
+  situation?: VoiceSituation;
+  activeOnly?: boolean;
+}): Promise<EmailVoiceProfile[]> {
+  if (!isSupabaseConfigured()) {
+    let profiles = [...demoVoiceProfiles];
+    if (opts?.situation) profiles = profiles.filter((p) => p.situation === opts.situation);
+    if (opts?.activeOnly) profiles = profiles.filter((p) => p.active);
+    return profiles;
+  }
+
+  const supabase = createClient();
+  let query = supabase
+    .from("email_voice_profiles")
+    .select(VOICE_PROFILE_COLUMNS)
+    .order("situation", { ascending: true })
+    .order("created_at", { ascending: false });
+  if (opts?.situation) query = query.eq("situation", opts.situation);
+  if (opts?.activeOnly) query = query.eq("active", true);
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("getVoiceProfiles error", error);
+    return [];
+  }
+  return (data ?? []) as unknown as EmailVoiceProfile[];
+}
+
+export async function getVoiceProfileById(id: string): Promise<EmailVoiceProfile | null> {
+  if (!isSupabaseConfigured()) {
+    return demoVoiceProfiles.find((p) => p.id === id) ?? null;
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("email_voice_profiles")
+    .select(VOICE_PROFILE_COLUMNS)
+    .eq("id", id)
+    .single();
+  if (error || !data) return null;
+  return data as unknown as EmailVoiceProfile;
+}
+
+const CAMPAIGN_COLUMNS =
+  "id, created_at, updated_at, name, situation, niche, offer_track, voice_profile_id, status, lead_filter, target_count, created_by";
+
+export async function getEmailCampaigns(): Promise<EmailCampaign[]> {
+  if (!isSupabaseConfigured()) {
+    return [...demoEmailCampaigns].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+  }
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("email_campaigns")
+    .select(CAMPAIGN_COLUMNS)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("getEmailCampaigns error", error);
+    return [];
+  }
+  return (data ?? []) as unknown as EmailCampaign[];
+}
+
+export interface VoiceProfilePerformance {
+  voice_profile_id: string;
+  sent: number;
+  opened: number;
+  clicked: number;
+  converted: number;
+}
+
+// Sent/opened/clicked come straight from outreach_sends (mechanical, always
+// accurate). Conversion is mechanical too — a lead this profile touched later
+// reaching deals.status='won'. Reply-rate is intentionally NOT included here:
+// there is no inbound-email-parsing pipeline in this ERP (see the "Mark as
+// replied" manual action) so it would misrepresent an approximate, human-
+// logged count as an automatic metric.
+export async function getVoiceProfilePerformance(): Promise<VoiceProfilePerformance[]> {
+  if (!isSupabaseConfigured()) {
+    return demoVoiceProfiles.map((p, i) => ({
+      voice_profile_id: p.id,
+      sent: i === 2 ? 18 : 0,
+      opened: i === 2 ? 9 : 0,
+      clicked: i === 2 ? 3 : 0,
+      converted: i === 2 ? 1 : 0,
+    }));
+  }
+
+  const supabase = createClient();
+  const { data: drafts } = await supabase
+    .from("outreach_drafts")
+    .select("id, lead_id, voice_profile_id")
+    .not("voice_profile_id", "is", null);
+  const draftRows = (drafts ?? []) as { id: string; lead_id: string; voice_profile_id: string }[];
+  if (draftRows.length === 0) return [];
+
+  const draftIds = draftRows.map((d) => d.id);
+  const leadIds = Array.from(new Set(draftRows.map((d) => d.lead_id)));
+
+  const [{ data: sends }, { data: wonLeads }] = await Promise.all([
+    supabase
+      .from("outreach_sends")
+      .select("draft_id, status")
+      .in("draft_id", draftIds),
+    supabase
+      .from("deals")
+      .select("lead_id")
+      .in("lead_id", leadIds)
+      .eq("stage", "closed_won"),
+  ]);
+
+  const draftToProfile = new Map(draftRows.map((d) => [d.id, d.voice_profile_id]));
+  const draftToLead = new Map(draftRows.map((d) => [d.id, d.lead_id]));
+  const wonLeadIds = new Set(((wonLeads ?? []) as { lead_id: string }[]).map((d) => d.lead_id));
+
+  const byProfile = new Map<string, VoiceProfilePerformance>();
+  const bump = (profileId: string, key: keyof Omit<VoiceProfilePerformance, "voice_profile_id">) => {
+    const row = byProfile.get(profileId) ?? {
+      voice_profile_id: profileId,
+      sent: 0,
+      opened: 0,
+      clicked: 0,
+      converted: 0,
+    };
+    row[key] += 1;
+    byProfile.set(profileId, row);
+  };
+
+  for (const send of (sends ?? []) as { draft_id: string | null; status: string }[]) {
+    if (!send.draft_id) continue;
+    const profileId = draftToProfile.get(send.draft_id);
+    if (!profileId) continue;
+    bump(profileId, "sent");
+    if (["opened", "clicked"].includes(send.status)) bump(profileId, "opened");
+    if (send.status === "clicked") bump(profileId, "clicked");
+  }
+
+  for (const [draftId, profileId] of draftToProfile) {
+    const leadId = draftToLead.get(draftId);
+    if (leadId && wonLeadIds.has(leadId)) bump(profileId, "converted");
+  }
+
+  return Array.from(byProfile.values());
 }

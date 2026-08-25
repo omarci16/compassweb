@@ -61,7 +61,13 @@ client portal sub-view.
 - **PDF generation**: Puppeteer via API route — for proposal PDF export
 
 ### AI & Integrations
-- **Primary AI**: Anthropic Claude API (`claude-sonnet-4-20250514`) — for all AI features
+- **Internal/analytical AI**: Anthropic Claude API (`claude-sonnet-5`) — lead scoring, enrichment
+  summaries, pain audits, blueprint generation, daily briefing. (Originally spec'd as
+  `claude-sonnet-4-20250514`; bumped after that model's retirement.)
+- **Client-facing email drafting**: OpenAI (see Section 19, Email Studio) — cold outreach, cold
+  follow-ups, re-engagement, proposal drafting, deal follow-ups, and the mockup-visual
+  image-prompt text generator. Moved off Claude because Hungarian prose quality for
+  client-facing copy specifically was judged weaker there; internal/analytical AI is unaffected.
 - **Web scraping / enrichment**: Apify — specifically the Website Content Crawler and Company Enrichment actors
 - **MCP integrations**: As described in Section 9 — configured via Claude Code MCP setup
 - **Deployment**: Vercel — same account as the public website
@@ -952,6 +958,13 @@ beyond formatting.
 
 ### 8.3 Template bank
 
+> **Superseded for the email-template portion by Email Studio (Section 19).** The `templates`
+> table below was never wired to any code — Email Studio's `email_voice_profiles` table is the
+> actual trainable-email mechanism now (tone, few-shot examples, banned phrases, visual style,
+> scoped by situation/niche/offer_track, with a live sandbox). The `templates` table stays in
+> the schema unused; blueprint/proposal-document templates described below remain a future idea,
+> unaffected by this.
+
 A managed collection of:
 - **Email templates**: proposal, follow-up 1/2/3, re-engagement 30/60/90, staging delivery,
   launch announcement, invoice chaser
@@ -1207,17 +1220,21 @@ The dashboard uses a fixed left sidebar (240px wide) and a main content area. No
 except a thin topbar showing: current page breadcrumb, current user avatar, daily briefing
 notification bell.
 
-Sidebar nav items (in order):
+Sidebar nav items (in order — updated from the original spec to match what's actually
+built: a "Prospecting" item was added pre-Email-Studio for the cold lead-sourcing UI, and
+"Email Studio" was added after Outreach per Section 19):
 1. Dashboard (home)
-2. Leads
-3. Pipeline
-4. Projects
-5. Archive
-6. Outreach
-7. Revenue
-8. Intelligence
-9. — separator —
-10. Settings (at bottom)
+2. Prospecting
+3. Leads
+4. Pipeline
+5. Projects
+6. Archive
+7. Outreach
+8. Email Studio
+9. Revenue
+10. Intelligence
+11. — separator —
+12. Settings (at bottom)
 
 ### 12.3 Daily briefing
 
@@ -1277,8 +1294,13 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=   # Server-side only, never exposed to browser
 
-# Anthropic
+# Anthropic (internal/analytical AI — scoring, enrichment, pain audits,
+# blueprints, daily briefing)
 ANTHROPIC_API_KEY=           # Server-side only
+
+# OpenAI (Email Studio — all client-facing email drafting + image-prompt text
+# generation; see the Email Studio section)
+OPENAI_API_KEY=              # Server-side only
 
 # Apify
 APIFY_API_TOKEN=             # Server-side only
@@ -1545,8 +1567,88 @@ hand over DNS, confirm everything live.
 
 ---
 
-*This document is version 1.0. Update the version number and add a changelog entry
+## 19. EMAIL STUDIO
+
+### 19.1 Purpose
+
+Every email the ERP drafts is client-facing prose, and tone is a business lever, not a
+constant. Email Studio lets the founders train a distinct "voice" per drafting situation and
+niche, compare variants, and see which one actually performs — instead of the tone being
+buried in a hardcoded prompt string that only a code change can touch.
+
+### 19.2 Voice Profiles — the trainable unit
+
+A **Voice Profile** (`email_voice_profiles` table) is scoped to a `situation` (see 19.3) plus
+an optional `niche` and `offer_track` (null = universal). It carries: `tone_traits` (free-form
+register/warmth/directness descriptors), `voice_description`, `few_shot_examples` (the
+highest-leverage lever — real example emails the model imitates the style of), `banned_phrases`,
+`required_elements`, `word_count_min/max`, `signature_block`, and `visual_style_prompt` (for the
+mockup image-prompt generator, `cold_first_touch` only).
+
+Every prompt file in `lib/ai/prompts/` that drafts client-facing copy is split into an
+**immutable structural half** (HTML restrictions, the JSON output contract, brand-safety rules,
+and — non-negotiable — the upgrade-track "only cite verified signals" anti-hallucination rule)
+and a **trainable voice half** rendered by `lib/ai/prompt-compose.ts`'s `buildVoiceBlock()` from
+the resolved profile. The voice block is explicitly framed as additive guidance that never
+overrides the structural rules.
+
+At most one profile per exact `(situation, niche, offer_track)` scope may be `is_default=true`
+(enforced by a partial unique index) — automatic batch/sequence generation only ever resolves
+to a default, via `lib/email-studio/resolve-voice-profile.ts`'s fallback chain: exact scope →
+drop `offer_track` → drop `niche` → the seeded global default for that situation. A non-default
+profile is only used when explicitly assigned to a Campaign or picked in the sandbox.
+
+### 19.3 Situations
+
+```
+cold_first_touch  — first cold outreach email (needs_site or upgrade track)
+cold_followup     — touch 2/3 of the cold outreach cadence
+re_engagement     — 30/60/90-day win-back (profile seeded; drafting itself not yet wired up)
+proposal          — Zone 2 proposal email (lib/ai/prompts/draft-proposal.ts)
+deal_followup     — Zone 2 post-proposal nudge (lib/ai/prompts/draft-followup.ts)
+```
+
+### 19.4 Campaigns
+
+An **Campaign** (`email_campaigns` table) assigns one Voice Profile to a frozen lead-segment
+snapshot (`lead_filter`) and gives `outreach_drafts` (via its `campaign_id` + `voice_profile_id`
+columns, the latter populated on every draft, campaign or not) something to roll performance
+up by. Status: `draft | active | completed | archived`.
+
+### 19.5 Performance
+
+`getVoiceProfilePerformance()` in `lib/data/queries.ts` computes sent/opened/clicked
+(mechanical, from `outreach_sends` via the Resend webhook) and conversion (mechanical, a
+touched lead's deal reaching `closed_won`) per profile. **Reply-rate is intentionally not
+included** — there is no inbound-email-parsing pipeline in this ERP (replies land in a
+monitored human inbox). A manual "Jelöld válaszoltnak" (mark as replied) action on the Outreach
+page logs an inbound `email_log` row as an approximate, human-driven stand-in.
+
+### 19.6 Sandbox
+
+The core "easy to train" mechanic: `POST /api/email-studio/preview-draft` accepts an *unsaved,
+in-progress* profile object (not a DB id) plus a real or synthetic (`lib/email-studio/
+sample-leads.ts`) lead, composes the prompt, calls OpenAI, and returns a draft **without ever
+writing to `outreach_drafts`**. Founders iterate on tone before saving anything.
+
+### 19.7 Vendor split
+
+Only client-facing drafting moved to OpenAI. Internal/analytical AI (lead scoring, enrichment
+summaries, pain audits, blueprint generation, daily briefing) stays on Claude — see Section 1.
+`lib/openai/client.ts` mirrors `lib/ai/anthropic.ts`'s shape (`callOpenAI`/
+`callOpenAIStructured`), using OpenAI's native Structured Outputs (hand-written JSON Schemas,
+kept in sync with their zod counterparts by a parity test) instead of Claude's
+string-extraction-then-parse pattern.
+
+---
+
+*This document is version 1.1. Update the version number and add a changelog entry
 when making significant changes to the spec.*
 
-*Last updated: 2026-05-09*
+*v1.1 (2026-08-25): Added Email Studio (Section 19) — trainable per-situation/niche Voice
+Profiles, Campaigns, and a live drafting sandbox. Moved all client-facing email drafting (cold
+outreach, follow-ups, proposals, image-prompt generation) from Claude to OpenAI; internal/
+analytical AI unchanged. See Sections 1, 8.3, 12.2, 19.*
+
+*Last updated: 2026-08-25*
 *Authors: Compass Marketing Kft. founders*

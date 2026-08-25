@@ -39,6 +39,8 @@ export type Database = {
       outreach_sends: TableDef<OutreachSendRow>;
       suppression_list: TableDef<SuppressionRow>;
       sending_inboxes: TableDef<SendingInboxRow>;
+      email_voice_profiles: TableDef<EmailVoiceProfileRow>;
+      email_campaigns: TableDef<EmailCampaignRow>;
     };
     Views: {
       [key: string]: {
@@ -330,6 +332,46 @@ export type OutreachDraftRow = {
   approved_at: string | null;
   approved_by: string | null;
   ai_meta: Json | null;
+  campaign_id: string | null;
+  voice_profile_id: string | null;
+};
+
+export type EmailVoiceProfileRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  name: string;
+  situation: string;
+  niche: string | null;
+  offer_track: string | null;
+  is_default: boolean;
+  active: boolean;
+  tone_traits: Json;
+  voice_description: string | null;
+  few_shot_examples: Json;
+  banned_phrases: string[];
+  required_elements: string[];
+  word_count_min: number | null;
+  word_count_max: number | null;
+  signature_block: string | null;
+  visual_style_prompt: string | null;
+  model_override: string | null;
+  created_by: string | null;
+};
+
+export type EmailCampaignRow = {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  name: string;
+  situation: string;
+  niche: string | null;
+  offer_track: string | null;
+  voice_profile_id: string;
+  status: string;
+  lead_filter: Json;
+  target_count: number | null;
+  created_by: string | null;
 };
 
 export type OutreachSendRow = {

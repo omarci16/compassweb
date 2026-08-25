@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { OutreachQueue } from "@/components/outreach/OutreachQueue";
+import { MarkRepliedButton } from "@/components/outreach/MarkRepliedButton";
 import {
   getEmailLog,
   getDeals,
@@ -184,6 +185,7 @@ export default async function OutreachPage() {
                           {formatRelativeHu(e.sent_at ?? e.created_at)} · {e.to_address}
                         </p>
                       </div>
+                      {e.lead_id && <MarkRepliedButton leadId={e.lead_id} />}
                     </div>
                   </div>
                 );

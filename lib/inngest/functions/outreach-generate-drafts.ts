@@ -55,7 +55,7 @@ export const outreachGenerateDrafts = inngest.createFunction(
       // One step per lead so a single AI failure doesn't lose the whole batch.
       const ok = await step.run(`draft-${lead.id}`, async () => {
         try {
-          const payload = await generateDraftPayload(lead);
+          const payload = await generateDraftPayload(supabase, lead);
           const { error } = await supabase.from("outreach_drafts").insert(payload);
           if (error) {
             console.error("[outreach] insert draft failed", error);
