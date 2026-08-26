@@ -1,0 +1,5 @@
+allowBuilds:
+  apify-client: true
+  esbuild: true
+  protobufjs: true
+  unrs-resolver: true

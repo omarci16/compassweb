@@ -1,0 +1,15 @@
+# Supabase project config. Enables the Supabase ↔ GitHub integration to run the
+# SQL files in supabase/migrations automatically on merge to the production
+# branch — no more manual SQL-editor paste (the 2.0 gotcha).
+#
+# ONE-TIME: replace `project_id` with your project ref (Supabase Dashboard →
+# Project Settings → General → "Reference ID"). See GO-LIVE-2.1.md.
+project_id = "your-project-ref"
+
+[db]
+# Postgres major version of the hosted project (Supabase runs 15+).
+major_version = 15
+
+[db.migrations]
+# Migrations live here; the GitHub integration applies them in filename order.
+schema_paths = []

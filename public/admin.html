@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8" />
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Admin — Compass Systems</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Host+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=11" />
+<link rel="stylesheet" href="admin.css?v=1" />
+</head>
+<body class="ad-body">
+
+<!-- ===== Auth gate ===== -->
+<div class="gate" id="gate" hidden>
+  <div class="gate__card">
+    <div class="gate__brand">
+      <img src="assets/logo.png" alt="Compass Systems" class="gate__logo">
+    </div>
+    <span class="eyebrow">[ BELSŐ ESZKÖZ — ADMIN ]</span>
+    <h1 class="gate__title">Vezérlőpult</h1>
+    <p class="text-secondary gate__lead">Jelentkezz be a folytatáshoz. Csak meghívott felhasználók férnek hozzá.</p>
+    <form id="gateForm" class="gate__form" autocomplete="on">
+      <label class="field">
+        <span class="field__label">E-mail</span>
+        <input type="email" id="gateEmail" class="field__input" placeholder="nev@compassmarketing.hu" autocomplete="username" required />
+      </label>
+      <label class="field">
+        <span class="field__label">Jelszó</span>
+        <input type="password" id="gatePass" class="field__input" placeholder="••••••••••" autocomplete="current-password" required />
+      </label>
+      <button type="submit" class="btn btn--primary gate__submit" id="gateSubmit">Belépés →</button>
+      <p class="gate__error" id="gateError" hidden></p>
+    </form>
+    <p class="gate__foot mono" id="gateFoot">Compass Marketing Kft. · Csak belső használatra</p>
+  </div>
+</div>
+
+<!-- ===== Config-missing notice ===== -->
+<div class="gate" id="setup" hidden>
+  <div class="gate__card">
+    <div class="gate__brand"><img src="assets/logo.png" alt="Compass Systems" class="gate__logo"></div>
+    <span class="eyebrow">[ BEÁLLÍTÁS SZÜKSÉGES ]</span>
+    <h1 class="gate__title">Egy lépés a kezdésig</h1>
+    <p class="text-secondary gate__lead">Az adminhoz be kell kötni a Supabase-projektet. Másold be a kulcsokat a <span class="mono">supabase-config.js</span> fájlba a <span class="mono">SUPABASE_SETUP.md</span> útmutató szerint, majd frissíts.</p>
+    <a href="index.html" class="btn btn--secondary gate__submit" style="justify-content:center;">← Vissza a főoldalra</a>
+    <p class="gate__foot mono">Compass Marketing Kft.</p>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<div class="ad" id="app" hidden>
+
+  <!-- Sidebar -->
+  <aside class="ad-side" id="side">
+    <div class="ad-side__top">
+      <a href="index.html" class="ad-side__brand" title="Vissza a weboldalra">
+        <img src="assets/logo.png" alt="Compass Systems">
+      </a>
+      <button class="ad-side__close" id="sideClose" aria-label="Menü bezárása">✕</button>
+    </div>
+
+    <nav class="ad-nav" aria-label="Admin navigáció">
+      <button class="ad-nav__item is-active" data-view="dashboard">
+        <span class="ad-nav__ico" aria-hidden="true">◧</span> Áttekintés
+      </button>
+      <!-- Megkeresések moved to the ERP: website briefs now land in the same
+           leads pipeline as scraped prospects. -->
+      <a class="ad-nav__item" href="/erp/leads">
+        <span class="ad-nav__ico" aria-hidden="true">✦</span> Megkeresések
+        <span class="ad-nav__ext" aria-hidden="true">↗</span>
+      </a>
+      <button class="ad-nav__item" data-view="blog">
+        <span class="ad-nav__ico" aria-hidden="true">✎</span> Blog
+      </button>
+      <button class="ad-nav__item" data-view="settings">
+        <span class="ad-nav__ico" aria-hidden="true">⚙</span> Beállítások
+      </button>
+    </nav>
+
+    <div class="ad-side__foot">
+      <div class="ad-side__user">
+        <span class="ad-side__avatar" id="userAvatar">·</span>
+        <span class="ad-side__email mono" id="userEmail">—</span>
+      </div>
+      <button class="ad-act ad-act--ghost" id="signOut">Kijelentkezés</button>
+    </div>
+  </aside>
+  <div class="ad-scrim" id="scrim" hidden></div>
+
+  <!-- Main -->
+  <div class="ad-main">
+    <header class="ad-top">
+      <button class="ad-top__menu" id="menuBtn" aria-label="Menü">☰</button>
+      <div class="ad-top__title">
+        <span class="eyebrow" id="topEyebrow">/ ÁTTEKINTÉS</span>
+        <h1 id="topTitle">Áttekintés</h1>
+      </div>
+      <div class="ad-top__actions" id="topActions"></div>
+    </header>
+
+    <main class="ad-view" id="view"></main>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="ad-toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Supabase JS SDK (admin only) + config + app -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-config.js?v=1"></script>
+<script src="admin.js?v=1"></script>
+</body>
+</html>

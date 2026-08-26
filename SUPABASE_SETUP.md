@@ -158,7 +158,9 @@ possible (email confirmations / sign-ups stay disabled by default).
 
 - Open `admin.html` (linked as the small **Admin** button in the site footer).
 - Sign in with the email + password from step 5.
-- Inquiries from the website land in **Megkeresések**; write posts in **Blog**.
+- Write posts in **Blog**. Website briefs no longer land here — they go straight
+  into the ERP as leads (`/erp/leads`), in the ERP's own Supabase project.
+  The `inquiries` table below is kept only so historical rows stay readable.
 - Published posts appear automatically on `blog.html` / `blog-en.html` and open in `blog-post.html`.
 
 If `supabase-config.js` still has the placeholder values, the public site keeps its

@@ -429,6 +429,15 @@ Lower-commitment. The Brief flow on `/contact`.
 
 ## 11. Tech Stack
 
+> **Reality check (as built).** The marketing site is **static HTML/CSS/JS in
+> `public/`**, not Next.js — it is served straight off the CDN and keeps its
+> `.html` URLs. The Next.js app in this repo is the **ERP at `/erp`**. The rest
+> of this section describes the intended direction, not the current site. See
+> `README.md` for how the two actually fit together. The accent colour is now
+> **white**, not gold, and the sans face is **Host Grotesk**, not Manrope —
+> `public/styles.css` is the source of truth for tokens.
+
+
 - **Framework:** Next.js 14+ (App Router). SSR + ISR for case studies. Strong SEO baseline.
 - **Styling:** Tailwind CSS + CSS custom properties for design tokens.
 - **Animation:** Framer Motion for scroll-driven motion. GSAP only if a specific section demands it.

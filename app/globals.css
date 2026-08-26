@@ -1,0 +1,107 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   Compass ERP — theme
+   ---------------------------------------------------------
+   Values are taken from public/styles.css so the back-office
+   reads as the same product as the marketing site. That file
+   is the source of truth: if a token changes there, change it
+   here too. Dark-only by design — there is no light mode on
+   the public site, so there is none here.
+
+   Note on --accent: in this (shadcn) system `accent` is the
+   hover/raised SURFACE, not the brand colour. The brand
+   accent — the site's white — is `primary`.
+   ========================================================= */
+
+@layer base {
+  :root {
+    --background: 0 0% 3.9%;          /* #0A0A0A  site --color-bg */
+    --foreground: 38 21% 93%;         /* #F0EDE8  --color-text-primary */
+
+    --card: 0 0% 6.7%;                /* #111111  --color-surface */
+    --card-foreground: 38 21% 93%;
+    --popover: 0 0% 6.7%;
+    --popover-foreground: 38 21% 93%;
+
+    --primary: 0 0% 100%;             /* #FFFFFF  --color-accent */
+    --primary-foreground: 0 0% 3.9%;  /* near-black text on white */
+
+    --secondary: 0 0% 10.2%;          /* #1A1A1A  --color-surface-2 */
+    --secondary-foreground: 38 21% 93%;
+
+    --muted: 0 0% 10.2%;
+    --muted-foreground: 43 4% 61%;    /* #A09E99  --color-text-secondary */
+
+    --accent: 0 0% 8.6%;              /* #161616  hover surface */
+    --accent-foreground: 38 21% 93%;
+
+    --destructive: 0 91% 71%;         /* #F87171  --color-error */
+    --destructive-foreground: 0 0% 3.9%;
+
+    --border: 0 0% 13.3%;             /* #222222  --color-border */
+    --input: 0 0% 13.3%;
+    --ring: 0 0% 100%;
+
+    --radius: 0.75rem;                /* 12px card radius */
+
+    --font-sans: "Host Grotesk", system-ui, -apple-system, sans-serif;
+    --font-mono: "Space Mono", "JetBrains Mono", ui-monospace, monospace;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  body {
+    font-family: var(--font-sans);
+  }
+  /* Headings track tight, as on the site. */
+  h1, h2, h3, h4 {
+    letter-spacing: -0.02em;
+  }
+  ::selection {
+    @apply bg-primary/20 text-foreground;
+  }
+}
+
+@layer components {
+  .compass-card {
+    @apply rounded-xl border border-border bg-card;
+  }
+  /* Space Mono, all-caps, wide tracking — the site's eyebrow/label treatment. */
+  .mono-label {
+    font-family: var(--font-mono);
+    @apply text-[11px] uppercase tracking-[0.12em] text-muted-foreground;
+  }
+  /* Numerals, stats and technical specs. */
+  .mono-num {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .urgency-high {
+    @apply border-l-4 border-l-compass-red;
+  }
+  .urgency-medium {
+    @apply border-l-4 border-l-compass-amber;
+  }
+  .urgency-low {
+    @apply border-l-4 border-l-compass-green;
+  }
+  .ring-focus {
+    @apply outline-none ring-2 ring-primary/40 ring-offset-2 ring-offset-background;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.4); }
